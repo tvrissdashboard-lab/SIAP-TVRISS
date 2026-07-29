@@ -1,0 +1,1745 @@
+<!-- TVRI Sumsel Dashboard Prototype - Restructured per BERANDA spec, visual theme preserved -->
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard TVRI Sumsel — Prototipe</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#050A17; --bg2:#081029; --bg3:#0B1B3E;
+    --text:#E9ECF9; --text-dim:#9AA5C7; --text-faint:#6B7599;
+    --glass:rgba(255,255,255,0.035); --glass-strong:rgba(255,255,255,0.065);
+    --glass-border:rgba(255,255,255,0.11); --glass-hi:rgba(255,255,255,0.18);
+    --cyan:#2BE8FF; --electric:#2E6BFF; --blue:#0B5FFF; --lightblue:#7FD1FF;
+    --violet:#8B6BFF; --pink:#FF4FD8; --amber:#FFC24B; --coral:#FF6B5B; --mint:#3CFFC0;
+    --shadow:0 20px 60px rgba(0,0,0,0.45);
+    --grid:rgba(255,255,255,0.08);
+  }
+  html.light{
+    --bg1:#FFFFFF; --bg2:#EEF5FF; --bg3:#E3EDFA;
+    --text:#121732; --text-dim:#4C5578; --text-faint:#7E88AC;
+    --glass:rgba(255,255,255,0.40); --glass-strong:rgba(255,255,255,0.60);
+    --glass-border:rgba(20,50,110,0.10); --glass-hi:rgba(255,255,255,0.85);
+    --cyan:#00B8CC; --electric:#2F6FEF; --blue:#0B4DA1; --lightblue:#BFE0FF;
+    --violet:#7358E0; --pink:#E23FB8; --amber:#D98A0E; --coral:#E0503F; --mint:#12B893;
+    --shadow:0 20px 50px rgba(30,60,130,0.12);
+    --grid:rgba(20,30,70,0.08);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 10%, color-mix(in srgb, var(--electric) 28%, transparent), transparent 45%),
+      radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--cyan) 24%, transparent), transparent 45%),
+      radial-gradient(circle at 50% 90%, color-mix(in srgb, var(--blue) 20%, transparent), transparent 50%),
+      linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+    background-attachment:fixed;
+    transition:background .5s ease, color .4s ease;
+    overflow-x:hidden;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .orb{position:fixed; border-radius:50%; filter:blur(70px); opacity:.5; z-index:0; pointer-events:none;}
+  .orb1{width:420px;height:420px; background:var(--electric); top:-140px; left:-120px; animation:float1 22s ease-in-out infinite;}
+  .orb2{width:360px;height:360px; background:var(--cyan); top:40%; right:-160px; animation:float2 26s ease-in-out infinite;}
+  .orb3{width:300px;height:300px; background:var(--lightblue); bottom:-160px; left:30%; animation:float3 20s ease-in-out infinite;}
+  @keyframes float1{0%,100%{transform:translate(0,0);}50%{transform:translate(40px,60px);}}
+  @keyframes float2{0%,100%{transform:translate(0,0);}50%{transform:translate(-50px,40px);}}
+  @keyframes float3{0%,100%{transform:translate(0,0);}50%{transform:translate(30px,-40px);}}
+  .glass{
+    background:var(--glass);
+    backdrop-filter:blur(22px) saturate(160%);
+    -webkit-backdrop-filter:blur(22px) saturate(160%);
+    border:1px solid var(--glass-border);
+    border-radius:28px;
+    box-shadow:var(--shadow), inset 0 1px 0 var(--glass-hi);
+    position:relative;
+  }
+  header{
+    position:sticky; top:0; z-index:60; margin:18px 22px 0;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 22px; border-radius:22px;
+  }
+  .brand{display:flex; align-items:center; gap:14px;}
+  .brand-mark{
+    width:42px;height:42px;border-radius:14px;
+    background:linear-gradient(135deg,var(--cyan),var(--electric));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Orbitron';font-weight:700;color:#04101F;font-size:14px;
+    box-shadow:0 0 24px color-mix(in srgb, var(--cyan) 55%, transparent);
+  }
+  .brand-text .title{font-family:'Orbitron'; font-weight:700; font-size:16px; letter-spacing:.5px;}
+  .brand-text .sub{font-size:10.5px; color:var(--text-faint); margin-top:2px; letter-spacing:.5px;}
+  .header-right{display:flex; align-items:center; gap:14px;}
+  .onair{
+    display:flex; align-items:center; gap:8px;
+    background:color-mix(in srgb, var(--mint) 14%, transparent);
+    border:1px solid color-mix(in srgb, var(--mint) 40%, transparent);
+    padding:7px 14px; border-radius:100px;
+    font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:.5px; color:var(--mint);
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--mint); animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--mint) 60%, transparent);}70%{box-shadow:0 0 0 8px transparent;}100%{box-shadow:0 0 0 0 transparent;}}
+  .theme-toggle{display:flex; align-items:center; gap:8px; cursor:pointer; padding:6px 8px; border-radius:100px; border:1px solid var(--glass-border); background:var(--glass-strong); user-select:none;}
+  .theme-toggle .track{width:44px;height:24px;border-radius:100px; position:relative; background:linear-gradient(90deg,var(--electric),var(--cyan));}
+  .theme-toggle .knob{position:absolute; top:2px; left:2px; width:20px;height:20px;border-radius:50%; background:#fff; transition:left .25s ease; display:flex; align-items:center; justify-content:center; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,.3);}
+  html.light .theme-toggle .knob{ left:22px; }
+  nav{display:flex; gap:6px; margin:16px 22px 0; padding:8px; overflow-x:auto; border-radius:100px;}
+  nav button{background:none;border:none;color:var(--text-dim); font-family:'Inter'; font-weight:600; font-size:13px; padding:10px 18px; cursor:pointer; border-radius:100px; white-space:nowrap; transition:.2s;}
+  nav button:hover{color:var(--text);}
+  nav button.active{color:#04101F; background:linear-gradient(120deg,var(--cyan),var(--electric)); box-shadow:0 0 22px color-mix(in srgb, var(--cyan) 45%, transparent);}
+  main{max-width:1320px; margin:0 auto; padding:26px 22px 90px; position:relative; z-index:1;}
+  .view{display:none;}
+  .view.active{display:block; animation:fade .4s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+  .section-head{margin-bottom:20px;}
+  .eyebrow{font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--electric); font-weight:600;}
+  h1.page-title{font-family:'Orbitron'; font-size:24px; font-weight:700; margin-top:6px; letter-spacing:.3px;}
+  .page-desc{color:var(--text-dim); font-size:13.5px; margin-top:6px;}
+  .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:26px;}
+  .stat-grid-5{grid-template-columns:repeat(5,1fr);}
+  .card{ padding:20px 22px; }
+  .stat-card .label{font-size:11.5px; color:var(--text-dim); font-weight:600; display:flex; align-items:center; justify-content:space-between; letter-spacing:.3px;}
+  .stat-card .value{font-family:'Orbitron'; font-size:27px; font-weight:700; margin-top:10px;}
+  .stat-card .delta{font-family:'IBM Plex Mono'; font-size:11px; margin-top:8px; display:inline-block; padding:3px 10px; border-radius:100px;}
+  .delta.up{color:var(--mint); background:color-mix(in srgb, var(--mint) 16%, transparent);}
+  .delta.down{color:var(--coral); background:color-mix(in srgb, var(--coral) 16%, transparent);}
+  .delta.warn{color:var(--amber); background:color-mix(in srgb, var(--amber) 16%, transparent);}
+  .delta.flat{color:var(--text-dim); background:var(--glass-strong);}
+  .kpi-link{margin-top:12px; font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono'; letter-spacing:.3px;}
+  .stat-card .subvalue{font-family:'IBM Plex Mono'; font-size:11px; color:var(--text-faint); margin-top:6px;}
+  .stat-card[data-goto]{cursor:pointer; transition:transform .25s ease, box-shadow .25s ease;}
+  .stat-card[data-goto]:hover{transform:translateY(-3px); box-shadow:0 26px 70px rgba(0,0,0,.5), inset 0 1px 0 var(--glass-hi);}
+  .grid-2{display:grid; grid-template-columns:1.4fr 1fr; gap:16px; margin-bottom:16px;}
+  .grid-2-equal{grid-template-columns:1fr 1fr;}
+  .panel-title{font-family:'Space Grotesk'; font-weight:700; font-size:15px; margin-bottom:2px;}
+  .panel-sub{font-size:11.5px; color:var(--text-faint); margin-bottom:14px;}
+  canvas{max-height:270px;}
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  th{text-align:left; font-family:'IBM Plex Mono'; font-size:10px; letter-spacing:.6px; text-transform:uppercase; color:var(--text-faint); font-weight:600; padding:9px 10px; border-bottom:1.5px solid var(--glass-border);}
+  td{padding:10px 10px; border-bottom:1px solid var(--glass-border); color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  .pill{padding:3px 10px; border-radius:100px; font-size:10.5px; font-weight:600; font-family:'IBM Plex Mono';}
+  .pill.red{background:color-mix(in srgb, var(--coral) 18%, transparent); color:var(--coral);}
+  .pill.amber{background:color-mix(in srgb, var(--amber) 18%, transparent); color:var(--amber);}
+  .pill.green{background:color-mix(in srgb, var(--mint) 18%, transparent); color:var(--mint);}
+  .pill.blue{background:color-mix(in srgb, var(--cyan) 18%, transparent); color:var(--cyan);}
+  .pill.violet{background:color-mix(in srgb, var(--violet) 20%, transparent); color:var(--violet);}
+  .platform-row{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--glass-border);}
+  .platform-row:last-child{border-bottom:none;}
+  .p-icon{width:38px;height:38px;border-radius:13px; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'Space Grotesk'; font-weight:700; font-size:12.5px; flex-shrink:0;}
+  .p-ig{background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF);}
+  .p-fb{background:#1877F2;}
+  .p-yt{background:#FF0000;}
+  .p-x{background:#111;}
+  .p-tt{background:linear-gradient(135deg,#25F4EE,#111,#FE2C55);}
+  .p-info{flex:1;}
+  .p-name{font-weight:600; font-size:13px;}
+  .p-meta{font-size:11px; color:var(--text-faint);}
+  .p-val{font-family:'IBM Plex Mono'; font-weight:600; font-size:14.5px; text-align:right;}
+  .tower-card{padding:18px 20px; margin-bottom:12px;}
+  .tower-head{display:flex; justify-content:space-between; align-items:flex-start;}
+  .tower-name{font-family:'Space Grotesk'; font-weight:700; font-size:15px;}
+  .tower-loc{font-size:11.5px; color:var(--text-faint); margin-top:2px;}
+  .tower-metrics{display:flex; gap:24px; margin-top:14px;}
+  .tm-label{font-size:10px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-faint); font-family:'IBM Plex Mono';}
+  .tm-val{font-family:'Orbitron'; font-weight:700; font-size:16px; margin-top:3px;}
+  .bar-track{height:6px; background:var(--glass-strong); border-radius:10px; margin-top:10px; overflow:hidden;}
+  .bar-fill{height:100%; background:linear-gradient(90deg,var(--cyan),var(--electric)); border-radius:10px;}
+  #mapPemancar{ height:420px; border-radius:22px; overflow:hidden; border:1px solid var(--glass-border);}
+  .map-wrap{padding:20px 22px; margin-bottom:16px;}
+  .map-legend{display:flex; gap:18px; margin-top:12px; flex-wrap:wrap;}
+  .map-legend .item{display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--text-dim);}
+  .map-legend .swatch{width:11px;height:11px;border-radius:50%;}
+  .leaflet-popup-content-wrapper{border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,.35); background:var(--bg2); color:var(--text);}
+  .leaflet-popup-tip{background:var(--bg2);}
+  .leaflet-popup-content{margin:14px 16px; font-family:'Inter',sans-serif;}
+  .popup-title{font-family:'Space Grotesk'; font-weight:700; font-size:14px; color:var(--text); margin-bottom:2px;}
+  .popup-loc{font-size:11px; color:var(--text-faint); margin-bottom:10px;}
+  .popup-row{display:flex; justify-content:space-between; font-size:11.5px; padding:4px 0; border-top:1px solid var(--glass-border);}
+  .popup-row span:first-child{color:var(--text-faint);}
+  .popup-row span:last-child{font-family:'IBM Plex Mono'; font-weight:600; color:var(--cyan);}
+  .tower-pin{width:16px;height:16px;border-radius:50%; border:3px solid #fff; box-shadow:0 2px 10px rgba(0,0,0,.4);}
+  .filter-row{display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap;}
+  .filter-chip{padding:8px 16px; border-radius:100px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid var(--glass-border); background:var(--glass); color:var(--text-dim); transition:.2s;}
+  .filter-chip.active{ color:#04101F; background:linear-gradient(120deg,var(--cyan),var(--electric)); border-color:transparent;}
+  .attention-panel .panel-title{margin-bottom:2px;}
+  .attention-row{display:flex; align-items:center; gap:12px; padding:14px 6px; border-bottom:1px solid var(--glass-border); cursor:pointer; transition:.2s; border-radius:14px;}
+  .attention-row:last-child{border-bottom:none;}
+  .attention-row:hover{background:var(--glass-strong); padding-left:12px; padding-right:12px;}
+  .attn-dot{width:10px;height:10px;border-radius:50%; flex-shrink:0;}
+  .attn-dot.red{background:var(--coral); box-shadow:0 0 10px color-mix(in srgb, var(--coral) 60%, transparent);}
+  .attn-dot.amber{background:var(--amber); box-shadow:0 0 10px color-mix(in srgb, var(--amber) 60%, transparent);}
+  .attn-dot.green{background:var(--mint); box-shadow:0 0 10px color-mix(in srgb, var(--mint) 60%, transparent);}
+  .attn-text{flex:1; font-size:13.5px;}
+  .attn-arrow{font-family:'IBM Plex Mono'; font-size:11px; color:var(--text-faint); white-space:nowrap;}
+  .attention-empty{padding:18px 6px; font-size:13px; color:var(--text-dim);}
+  .placeholder-card{text-align:center; padding:70px 24px; display:flex; flex-direction:column; align-items:center; gap:10px;}
+  .placeholder-icon{font-size:42px; opacity:.9;}
+  .placeholder-title{font-family:'Space Grotesk'; font-weight:700; font-size:18px;}
+  .placeholder-desc{color:var(--text-dim); font-size:13px; max-width:440px; line-height:1.6;}
+  .placeholder-tag{margin-top:6px; font-family:'IBM Plex Mono'; font-size:10.5px; letter-spacing:.6px; color:var(--text-faint); text-transform:uppercase; padding:5px 14px; border-radius:100px; border:1px dashed var(--glass-border);}
+  .footer-note{margin-top:36px; padding:16px 22px; text-align:center; font-size:11px; color:var(--text-faint); font-family:'IBM Plex Mono';}
+  .umum-row:hover{background:var(--glass-strong);}
+  .modal-overlay{position:fixed; inset:0; background:rgba(2,6,20,0.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; z-index:300; padding:20px;}
+  .modal-overlay.active{display:flex;}
+  .modal-box{max-width:540px; width:100%; max-height:82vh; overflow-y:auto; padding:26px 26px 22px; position:relative;}
+  .modal-close{position:absolute; top:14px; right:14px; background:var(--glass-strong); border:1px solid var(--glass-border); color:var(--text-dim); width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:14px; line-height:1;}
+  .modal-close:hover{color:var(--text);}
+  .detail-row{display:flex; justify-content:space-between; gap:18px; padding:10px 0; border-bottom:1px solid var(--glass-border); font-size:13px;}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-row .dk{color:var(--text-faint); flex-shrink:0; min-width:170px;}
+  .detail-row .dv{text-align:right; font-weight:500; word-break:break-word;}
+  @media(max-width:1100px){
+    .stat-grid-5{grid-template-columns:repeat(3,1fr);}
+  }
+  @media(max-width:900px){
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+    .stat-grid-5{grid-template-columns:repeat(2,1fr);}
+    .grid-2{grid-template-columns:1fr;}
+    .grid-2-equal{grid-template-columns:1fr;}
+    header{padding:12px 16px; margin:12px 12px 0;} nav{margin:12px 12px 0;} main{padding:18px 12px 70px;}
+  }
+
+    /* TVRI Sumsel logo adjustment */
+    .brand-mark.brand-logo{
+      width:auto;
+      min-width:58px;
+      height:48px;
+      padding:5px 8px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .brand-mark.brand-logo img{
+      display:block;
+      width:auto;
+      height:38px;
+      max-width:110px;
+      object-fit:contain;
+    }
+
+    /* More transparent futuristic glassmorphism */
+    .glass{
+      background:var(--glass);
+      backdrop-filter:blur(24px) saturate(145%);
+      -webkit-backdrop-filter:blur(24px) saturate(145%);
+    }
+    .glass.strong{
+      background:var(--glass-strong);
+      backdrop-filter:blur(26px) saturate(145%);
+      -webkit-backdrop-filter:blur(26px) saturate(145%);
+    }
+
+    /* Blue-centric theme accents */
+    .btn-primary{
+      background:linear-gradient(135deg,var(--blue),var(--cyan));
+    }
+    .btn-primary:hover{
+      box-shadow:0 10px 26px rgba(11,99,206,.25);
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<header class="glass">
+  <div class="brand">
+    <div class="brand-mark brand-logo">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/TVRI_Sumatera_Selatan_2023.svg"
+               alt="Logo TVRI Sumatera Selatan">
+        </div>
+    <div class="brand-text">
+      <div class="title">DASHBOARD TVRI SUMATERA SELATAN</div>
+      <div class="sub">DASHBOARD OPERASIONAL · PROTOTIPE</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="onair" id="connStatus"><span class="dot"></span> DATA CONTOH</div>
+    <div class="theme-toggle" id="themeToggle">
+      <span class="mono" style="font-size:10.5px; color:var(--text-dim);">MODE</span>
+      <div class="track"><div class="knob" id="knob">☀️</div></div>
+    </div>
+  </div>
+</header>
+
+<nav class="glass" id="mainNav">
+  <button class="active" data-view="beranda">BERANDA</button>
+  <button data-view="umum">UMUM</button>
+  <button data-view="kmb">KMB</button>
+  <button data-view="bmn">BMN</button>
+  <button data-view="sdm">SDM</button>
+  <button data-view="keuangan">KEUANGAN</button>
+  <button data-view="transmisi">TRANSMISI</button>
+</nav>
+
+<main>
+
+  <!-- ===================== BERANDA ===================== -->
+  <div class="view active" id="beranda">
+    <div class="section-head">
+      <div class="eyebrow">Beranda</div>
+      <h1 class="page-title">Kondisi Terkini TVRI Sumatera Selatan</h1>
+      <p class="page-desc">Gambaran cepat kondisi seluruh unit untuk manajemen — klik kartu atau grafik untuk masuk ke detail modul terkait.</p>
+    </div>
+
+    <!-- BARIS 1 — 5 KPI Utama -->
+    <div class="stat-grid stat-grid-5">
+      <div class="card stat-card glass" data-goto="kmb">
+        <div class="label">Total Followers <span>📡</span></div>
+        <div class="value">205.6K</div>
+        <span class="delta up">▲ 3.6% bulan ini</span>
+        <div class="kpi-link">Lihat Detail KMB →</div>
+      </div>
+      <div class="card stat-card glass" data-goto="sdm">
+        <div class="label">Total Pegawai <span>👥</span></div>
+        <div class="value" id="berandaKpiPegawai">126</div>
+        <span class="delta flat">Seluruh Unit Kerja</span>
+        <div class="kpi-link">Lihat Detail SDM →</div>
+      </div>
+      <div class="card stat-card glass" data-goto="sdm">
+        <div class="label">Pensiun ≤ 3 Tahun <span>⏳</span></div>
+        <div class="value" id="berandaKpiPensiun">9</div>
+        <span class="delta warn">Perlu rencana suksesi</span>
+        <div class="kpi-link">Lihat Detail SDM →</div>
+      </div>
+      <div class="card stat-card glass" data-goto="transmisi">
+        <div class="label">Pemancar Aktif <span>📶</span></div>
+        <div class="value">4 / 5</div>
+        <span class="delta down">1 unit maintenance</span>
+        <div class="kpi-link">Lihat Detail Transmisi →</div>
+      </div>
+      <div class="card stat-card glass" data-goto="umum">
+        <div class="label">Total Disposisi Surat <span>✉️</span></div>
+        <div class="value" id="berandaKpiDisposisi">987</div>
+        <span class="delta flat">Terhubung dengan Tab Umum</span>
+        <div class="kpi-link">Lihat Detail Umum →</div>
+      </div>
+    </div>
+
+    <!-- BARIS 2 — Dua Grafik Utama (simetris) -->
+    <div class="grid-2 grid-2-equal">
+      <div class="card glass">
+        <div class="panel-title">Perkembangan Followers</div>
+        <div class="panel-sub">Klik platform untuk mengganti perspektif grafik</div>
+        <div class="filter-row" id="followersFilterRow">
+          <div class="filter-chip active" data-key="TOTAL">TOTAL</div>
+          <div class="filter-chip" data-key="INSTAGRAM">INSTAGRAM</div>
+          <div class="filter-chip" data-key="FACEBOOK">FACEBOOK</div>
+          <div class="filter-chip" data-key="YOUTUBE">YOUTUBE</div>
+          <div class="filter-chip" data-key="TIKTOK">TIKTOK</div>
+          <div class="filter-chip" data-key="X">X</div>
+        </div>
+        <canvas id="chartFollowersBeranda"></canvas>
+      </div>
+      <div class="card glass">
+        <div class="panel-title">Komposisi Sumber Daya Manusia</div>
+        <div class="panel-sub">Klik perspektif untuk mengganti tampilan komposisi</div>
+        <div class="filter-row" id="sdmFilterRow">
+          <div class="filter-chip active" data-key="GENERASI">GENERASI</div>
+          <div class="filter-chip" data-key="USIA">USIA</div>
+          <div class="filter-chip" data-key="JABATAN">JABATAN</div>
+          <div class="filter-chip" data-key="UNIT_KERJA">UNIT KERJA</div>
+        </div>
+        <canvas id="chartSDMBeranda"></canvas>
+      </div>
+    </div>
+
+    <!-- BARIS 3 — Status BMN & Status Keuangan (simetris) -->
+    <div class="grid-2 grid-2-equal">
+      <div class="card stat-card glass" data-goto="bmn">
+        <div class="label">Status BMN <span>📦</span></div>
+        <div class="value">32</div>
+        <span class="delta warn">Perlu Perhatian</span>
+        <div class="kpi-link">Lihat Detail BMN →</div>
+      </div>
+      <div class="card stat-card glass" data-goto="keuangan">
+        <div class="label">Status Keuangan <span>💰</span></div>
+        <div class="value">68%</div>
+        <span class="delta flat">Serapan Anggaran</span>
+        <div class="kpi-link">Lihat Detail Keuangan →</div>
+      </div>
+    </div>
+
+    <!-- BARIS 4 — Perhatian Manajemen (full width) -->
+    <div class="card glass attention-panel">
+      <div class="panel-title">Perhatian Manajemen</div>
+      <div class="panel-sub">Ringkasan lintas modul yang memerlukan tindak lanjut — klik untuk membuka modul terkait</div>
+      <div id="attentionList"></div>
+    </div>
+  </div>
+
+  <!-- ===================== UMUM ===================== -->
+  <div class="view" id="umum">
+    <div class="section-head">
+      <div class="eyebrow">Umum</div>
+      <h1 class="page-title">Surat-Menyurat &amp; Disposisi Tata Usaha</h1>
+      <p class="page-desc">Rekap disposisi eksternal dan internal dari Sekretariat TVRI Sumsel.</p>
+    </div>
+
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="card stat-card glass">
+        <div class="label">Total Disposisi <span>📨</span></div>
+        <div class="value" id="umumKpiTotal">–</div>
+        <span class="delta flat">Eksternal + Internal</span>
+      </div>
+      <div class="card stat-card glass">
+        <div class="label">Internal <span>📥</span></div>
+        <div class="value" id="umumKpiInternal">–</div>
+        <span class="delta flat">Dari dalam instansi</span>
+      </div>
+      <div class="card stat-card glass">
+        <div class="label">Eksternal <span>📤</span></div>
+        <div class="value" id="umumKpiEksternal">–</div>
+        <span class="delta flat">Dari luar instansi</span>
+      </div>
+    </div>
+
+    <div class="card glass" style="max-width:520px; margin:0 auto;">
+      <div class="panel-title">Komposisi Disposisi</div>
+      <div class="panel-sub">Perbandingan Internal vs Eksternal</div>
+      <canvas id="chartDispoKomposisi"></canvas>
+    </div>
+
+    <div class="card glass">
+      <div class="panel-title">Pencarian Surat / Disposisi</div>
+      <div class="panel-sub">Cari berdasarkan nomor surat, nomor dispo, surat dari, atau perihal — mencakup ketiga sumber sekaligus</div>
+      <div style="margin-bottom:14px;">
+        <input type="text" id="umumSearchInput" placeholder="🔍 Cari nomor surat / nomor dispo / surat dari / perihal..."
+          style="width:100%; padding:12px 18px; border-radius:100px; border:1px solid var(--glass-border); background:var(--glass); color:var(--text); font-size:13px; outline:none; font-family:'Inter',sans-serif;">
+      </div>
+      <div class="filter-row" id="umumFilterRow">
+        <div class="filter-chip active" data-key="SEMUA">SEMUA</div>
+        <div class="filter-chip" data-key="INTERNAL">INTERNAL</div>
+        <div class="filter-chip" data-key="EKSTERNAL">EKSTERNAL</div>
+      </div>
+      <div id="umumLoadingState" style="text-align:center; padding:30px; color:var(--text-faint); font-size:13px;">Memuat data disposisi dari spreadsheet...</div>
+      <div id="umumEmptyState" style="display:none; text-align:center; padding:30px; color:var(--text-faint); font-size:13px;">Tidak ada data yang cocok dengan pencarian/filter ini.</div>
+      <div id="umumTableWrap" style="display:none; overflow-x:auto;">
+        <table>
+          <thead><tr><th>Jenis</th><th>No Dispo</th><th>Tgl Dispo</th><th>Surat Dari</th><th>No Surat</th><th>Perihal</th></tr></thead>
+          <tbody id="umumResultsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== KMB ===================== -->
+  <div class="view" id="kmb">
+    <div class="section-head">
+      <div class="eyebrow">Komunikasi &amp; Media</div>
+      <h1 class="page-title">KMB — Performa Media Sosial &amp; Konten</h1>
+      <p class="page-desc">Instagram, Facebook, YouTube, TikTok, dan X (Twitter) — data contoh untuk ilustrasi.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card glass">
+        <div class="panel-title">Followers / Subscribers per Platform</div>
+        <div id="platformList"></div>
+      </div>
+      <div class="card glass">
+        <div class="panel-title">Distribusi Total Audiens</div>
+        <div class="panel-sub">Proporsi antar platform</div>
+        <canvas id="chartAudienceShare"></canvas>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card glass">
+        <div class="panel-title">Engagement Rate Mingguan</div>
+        <div class="panel-sub">Rata-rata interaksi terhadap jumlah pengikut</div>
+        <canvas id="chartEngagement"></canvas>
+      </div>
+      <div class="card glass">
+        <div class="panel-title">Konten Terpopuler Bulan Ini</div>
+        <table>
+          <tr><th>Judul Konten</th><th>Platform</th><th>Views</th></tr>
+          <tr><td>Liputan Ogoh-Ogoh Sumsel</td><td><span class="pill blue">YouTube</span></td><td class="mono">42.1K</td></tr>
+          <tr><td>Behind The Scene Studio</td><td><span class="pill violet">TikTok</span></td><td class="mono">38.7K</td></tr>
+          <tr><td>Warta Sumsel Malam</td><td><span class="pill red">Instagram</span></td><td class="mono">31.6K</td></tr>
+          <tr><td>Festival Sriwijaya</td><td><span class="pill green">Facebook</span></td><td class="mono">28.4K</td></tr>
+          <tr><td>Live Sidang Paripurna</td><td><span class="pill amber">X</span></td><td class="mono">19.2K</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== BMN ===================== -->
+  <div class="view" id="bmn">
+    <div class="section-head">
+      <div class="eyebrow">Barang Milik Negara</div>
+      <h1 class="page-title">Inventaris &amp; Aset (BMN)</h1>
+      <p class="page-desc">Status inventaris, kondisi aset, dan barang milik negara TVRI Sumsel.</p>
+    </div>
+    <div class="card glass placeholder-card">
+      <div class="placeholder-icon">📦</div>
+      <div class="placeholder-title">Modul Belum Tersedia</div>
+      <div class="placeholder-desc">Data BMN (rusak ringan, rusak berat, perlu pemeliharaan, belum terinventarisasi) akan diintegrasikan pada tahap pengembangan berikutnya.</div>
+      <div class="placeholder-tag">Coming Soon</div>
+    </div>
+  </div>
+
+  <!-- ===================== SDM ===================== -->
+  <div class="view" id="sdm">
+    <div class="section-head">
+      <div class="eyebrow">Sumber Daya Manusia</div>
+      <h1 class="page-title">Data Kepegawaian (SDM)</h1>
+      <p class="page-desc">Distribusi generasi, golongan, unit kerja, dan proyeksi pensiun 2026–2028.</p>
+    </div>
+
+    <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="card stat-card glass">
+        <div class="label">Total Pegawai <span>👥</span></div>
+        <div class="value" id="sdmKpiTotal">–</div>
+        <span class="delta flat">PNS + PPPK + Kontrak</span>
+      </div>
+      <div class="card stat-card glass">
+        <div class="label">Rata-rata Usia <span>🎂</span></div>
+        <div class="value" id="sdmKpiUsia">–</div>
+        <span class="delta flat">Tahun</span>
+      </div>
+      <div class="card stat-card glass">
+        <div class="label">Pensiun ≤ 3 Tahun <span>⏳</span></div>
+        <div class="value" id="sdmKpiPensiun">–</div>
+        <span class="delta warn">Tahun 2026–2027</span>
+      </div>
+      <div class="card stat-card glass">
+        <div class="label">Rasio Gender <span>⚧</span></div>
+        <div class="value" id="sdmKpiGender">–</div>
+        <span class="delta flat">Laki-laki : Perempuan</span>
+      </div>
+    </div>
+
+    <div id="sdmLoadingState" style="text-align:center; padding:24px; color:var(--text-faint); font-size:13px;">Memuat data kepegawaian dari spreadsheet...</div>
+
+    <div class="grid-2 grid-2-equal">
+      <div class="card glass">
+        <div class="panel-title">Komposisi Generasi</div>
+        <div class="panel-sub">Berdasarkan usia pegawai saat ini</div>
+        <canvas id="chartSdmGenerasi"></canvas>
+      </div>
+      <div class="card glass">
+        <div class="panel-title">Distribusi Golongan</div>
+        <div class="panel-sub">PNS: Golongan I–IV · PPPK: Grade sesuai data yang tersedia</div>
+        <div class="filter-row" id="sdmGolonganFilterRow">
+          <div class="filter-chip active" data-key="PNS">PNS</div>
+          <div class="filter-chip" data-key="PPPK">PPPK</div>
+        </div>
+        <canvas id="chartSdmGolongan"></canvas>
+      </div>
+    </div>
+
+    <div class="grid-2 grid-2-equal">
+      <div class="card glass">
+        <div class="panel-title">Sebaran Pegawai per Unit Kerja</div>
+        <div class="panel-sub">Hasil pencocokan data pegawai ke 7 unit kerja</div>
+        <canvas id="chartSdmUnitKerja"></canvas>
+      </div>
+      <div class="card glass">
+        <div class="panel-title">Top Jabatan Terbanyak</div>
+        <div class="panel-sub">8 judul jabatan dengan jumlah pegawai terbanyak</div>
+        <canvas id="chartSdmJabatan"></canvas>
+      </div>
+    </div>
+
+    <div class="card glass">
+      <div class="panel-title">Proyeksi Pensiun 2026–2028</div>
+      <div class="panel-sub">Klik baris untuk detail lengkap — diurutkan berdasarkan tahun pensiun terdekat</div>
+      <div id="sdmPensiunEmptyState" style="display:none; text-align:center; padding:24px; color:var(--text-faint); font-size:13px;">Belum ada data pensiun yang bisa ditampilkan.</div>
+      <div id="sdmPensiunTableWrap" style="display:none; overflow-x:auto;">
+        <table>
+          <thead><tr><th>Nama</th><th>Tanggal Pensiun</th><th>Golongan</th><th>Unit Kerja</th><th>Masa Kerja</th><th>Status</th></tr></thead>
+          <tbody id="sdmPensiunBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== KEUANGAN ===================== -->
+  <div class="view" id="keuangan">
+    <div class="section-head">
+      <div class="eyebrow">Keuangan</div>
+      <h1 class="page-title">Dokumen SPM &amp; SPBY</h1>
+      <p class="page-desc">Rekap dokumen dibayarkan dan status pengarsipan — Surat Perintah Membayar (SPM) dan Surat Perintah Bayar (SPBY).</p>
+    </div>
+
+    <div id="keuanganLoadingState" style="text-align:center; padding:24px; color:var(--text-faint); font-size:13px;">Memuat data keuangan dari spreadsheet...</div>
+
+    <div id="keuanganContent" style="display:none;">
+      <div class="stat-grid" style="grid-template-columns:repeat(5,1fr);">
+        <div class="card stat-card glass">
+          <div class="label">Total SPM <span>📄</span></div>
+          <div class="value" id="keuKpiTotalSpm">–</div>
+          <span class="delta flat">Dokumen Dibayarkan</span>
+        </div>
+        <div class="card stat-card glass">
+          <div class="label">Arsip SPM <span>🗂️</span></div>
+          <div class="value" id="keuKpiArsipSpmPct">–</div>
+          <div class="subvalue" id="keuKpiArsipSpmFrac">–</div>
+        </div>
+        <div class="card stat-card glass">
+          <div class="label">Total SPBY <span>📄</span></div>
+          <div class="value" id="keuKpiTotalSpby">–</div>
+          <span class="delta flat">Dokumen Dibayarkan</span>
+        </div>
+        <div class="card stat-card glass">
+          <div class="label">Arsip SPBY <span>🗂️</span></div>
+          <div class="value" id="keuKpiArsipSpbyPct">–</div>
+          <div class="subvalue" id="keuKpiArsipSpbyFrac">–</div>
+        </div>
+        <div class="card stat-card glass">
+          <div class="label">Belum Arsip <span>📭</span></div>
+          <div class="value" id="keuKpiBelumArsip">–</div>
+          <div class="subvalue" id="keuKpiBelumArsipDetail">–</div>
+        </div>
+      </div>
+
+      <div class="grid-2 grid-2-equal">
+        <div class="card glass">
+          <div class="panel-title">Grafik Dokumen SPM</div>
+          <div class="panel-sub">Dibayarkan vs Diarsipkan per Bulan</div>
+          <canvas id="chartKeuanganSpm"></canvas>
+        </div>
+        <div class="card glass">
+          <div class="panel-title">Grafik Dokumen SPBY</div>
+          <div class="panel-sub">Dibayarkan vs Diarsipkan per Bulan</div>
+          <canvas id="chartKeuanganSpby"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TRANSMISI ===================== -->
+  <div class="view" id="transmisi">
+    <div class="section-head">
+      <div class="eyebrow">Infrastruktur Siaran</div>
+      <h1 class="page-title">Data Transmisi &amp; Pemancar</h1>
+      <p class="page-desc">Status, lokasi, dan daya pancar tiap stasiun pemancar TVRI Sumsel.</p>
+    </div>
+    <div class="map-wrap glass">
+      <div class="panel-title">Peta Sebaran Pemancar — Provinsi Sumatera Selatan</div>
+      <div class="panel-sub">Klik titik pemancar untuk melihat data transmisinya</div>
+      <div id="mapPemancar"></div>
+      <div class="map-legend">
+        <div class="item"><span class="swatch" style="background:var(--cyan);"></span> Aktif</div>
+        <div class="item"><span class="swatch" style="background:var(--coral);"></span> Maintenance</div>
+      </div>
+    </div>
+    <div id="towerFull"></div>
+    <div class="grid-2" style="margin-top:16px;">
+      <div class="card glass">
+        <div class="panel-title">Perbandingan Daya Pancar (Watt)</div>
+        <canvas id="chartPower"></canvas>
+      </div>
+      <div class="card glass">
+        <div class="panel-title">Estimasi Jam Operasional per Pemancar</div>
+        <div class="panel-sub">Rata-rata jam siaran aktif per hari</div>
+        <canvas id="chartUptime"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">PROTOTIPE DASHBOARD · SELURUH ANGKA ADALAH DATA CONTOH UNTUK ILUSTRASI · TVRI SUMSEL</div>
+</main>
+
+<div class="modal-overlay" id="dispoModalOverlay">
+  <div class="modal-box glass">
+    <button class="modal-close" id="dispoModalCloseBtn">✕</button>
+    <div class="panel-title" id="detailModalTitle">Detail Disposisi</div>
+    <div class="panel-sub">Kolom yang tidak tersedia pada sumber data tidak ditampilkan</div>
+    <div id="dispoModalContent"></div>
+  </div>
+</div>
+
+<script>
+const root = document.documentElement;
+const knob = document.getElementById('knob');
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  root.classList.toggle('light');
+  knob.textContent = root.classList.contains('light') ? '☀️' : '🌙';
+  rebuildAllCharts();
+  if(mapInitialized) setMapTheme();
+  if(umumLoaded) renderUmumCharts();
+  if(sdmLoaded) renderSdmCharts();
+  if(keuanganLoaded) renderKeuanganCharts();
+});
+
+/* ======================================================================
+   KONEKSI KE GOOGLE SHEETS (via Apps Script Web App)
+   ------------------------------------------------------------------------
+   1. Buat Apps Script di spreadsheet Anda (Extensions > Apps Script),
+      deploy sebagai Web App dengan akses "Anyone".
+   2. Tempel URL Web App hasil deploy ke variabel API_URL di bawah ini.
+   3. Setelah diisi dan file ini di-upload ulang ke Netlify, badge di
+      pojok kanan atas akan berubah otomatis (memakai ?action=ping,
+      jadi TIDAK bergantung pada nama sheet tertentu):
+        - "DATA CONTOH"     -> API_URL masih kosong
+        - "TERHUBUNG API"   -> berhasil ping ke Apps Script Web App
+        - "GAGAL KONEKSI"   -> URL salah / belum di-deploy dengan benar
+   4. Gunakan fetchSheetData('NAMA_SHEET') di bagian lain script untuk
+      mengambil data sheet KMB, SDM, BMN, dst dan mengisi KPI/chart dengan data asli.
+   ====================================================================== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbyzZPUXpCRFn4_mRLoJUAZ_A7W_FvPPXAikLS-_pLgPIeC8F7XuRlochGT0X9BRDt3IVg/exec'; // <-- TEMPEL URL WEB APP APPS SCRIPT DI SINI, contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
+
+async function fetchSheetData(sheetName, source){
+  if(!API_URL) throw new Error('API_URL belum diisi');
+  const src = source || 'MASTER';
+  const res = await fetch(`${API_URL}?source=${encodeURIComponent(src)}&sheet=${encodeURIComponent(sheetName)}`);
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  if(json.error) throw new Error(json.error);
+  return json.data; // array of row objects, key = nama kolom header di sheet
+}
+
+// Directory pegawai SDM yang SUDAH digabung dengan unit kerja di sisi server
+// (Apps Script) — NIP tidak pernah dikirim, cukup panggil aksi khusus ini.
+async function fetchSdmDirectory(){
+  if(!API_URL) throw new Error('API_URL belum diisi');
+  const res = await fetch(`${API_URL}?action=sdm_directory`);
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  if(json.error) throw new Error(json.error);
+  return json.data;
+}
+
+// Data sheet KEUANGAN (tabel SPM & SPBY yang berdampingan) sudah dipisah dan
+// dinormalisasi di sisi server (Apps Script) -> { spm:{monthly,total}, spby:{monthly,total} }.
+async function fetchKeuanganData(){
+  if(!API_URL) throw new Error('API_URL belum diisi');
+  const res = await fetch(`${API_URL}?action=keuangan_data`);
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  if(json.error) throw new Error(json.error);
+  return json;
+}
+
+async function testKoneksiAPI(){
+  const badge = document.getElementById('connStatus');
+  if(!API_URL){
+    badge.innerHTML = '<span class="dot" style="background:var(--text-faint); animation:none;"></span> DATA CONTOH';
+    return;
+  }
+  try{
+    const res = await fetch(`${API_URL}?action=ping`);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if(json.error) throw new Error(json.error);
+    console.log('[API] Terhubung. Daftar sheet tersedia:', json.sheets);
+    badge.innerHTML = '<span class="dot"></span> TERHUBUNG API';
+    badge.style.color = 'var(--mint)';
+    badge.style.borderColor = 'color-mix(in srgb, var(--mint) 40%, transparent)';
+    badge.style.background = 'color-mix(in srgb, var(--mint) 14%, transparent)';
+  }catch(err){
+    console.error('[API] Gagal konek ke API:', err);
+    badge.innerHTML = '<span class="dot" style="background:var(--coral); animation:none;"></span> GAGAL KONEKSI';
+    badge.style.color = 'var(--coral)';
+    badge.style.borderColor = 'color-mix(in srgb, var(--coral) 40%, transparent)';
+    badge.style.background = 'color-mix(in srgb, var(--coral) 14%, transparent)';
+  }
+}
+testKoneksiAPI();
+
+/* ======================================================================
+   TAB UMUM — Disposisi Tata Usaha
+   Sumber: 3 sheet terpisah di spreadsheet (kolom beda-beda), digabung
+   jadi satu kesatuan data disposisi di sisi dashboard.
+   ====================================================================== */
+let umumAllData = [];      // gabungan data ternormalisasi dari 3 sheet
+let umumLoaded = false;    // supaya fetch hanya sekali per sesi
+let umumFilterKey = 'SEMUA';
+let umumSearchQuery = '';
+let umumCounts = { eks:0, internal:0 };
+let chartDispoKomposisi = null;
+
+/* --------------------------------------------------------------------
+   Resolver nama kolom fleksibel — mengatasi header yang beda-beda antar
+   sheet (mis. sheet Eksternal pakai "TGL DISPO TU", sheet Internal cuma
+   "TGL DISPO"). Pencocokan tidak peduli huruf besar/kecil & spasi.
+   -------------------------------------------------------------------- */
+const UMUM_FIELD_ALIASES = {
+  nomorDispo:       ['Nomor Dispo TU', 'No Dispo TU', 'Nomor Dispo'],
+  tglDispo:         ['TGL Dispo TU', 'TGL Dispo', 'Tanggal Dispo TU', 'Tanggal Dispo'],
+  tglAgenda:        ['TGL Agenda Kepsta', 'TGL Agenda', 'Tanggal Agenda Kepsta', 'Tanggal Agenda'],
+  suratDariPenerus: ['Surat dari Penerus ke Kepsta', 'Surat Dari Penerus ke Kepsta'],
+  dasarSurat:       ['Dasar Surat'],
+  suratDari:        ['Surat Dari'],
+  noAgendaKepsta:   ['No Agenda Kepsta', 'No Agenda'],
+  nomorSurat:       ['Nomor Surat'],
+  perihal:          ['Perihal'],
+};
+
+function normalizeHeaderText(h){
+  return String(h ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+// Versi "squash" — buang semua spasi/titik/garis miring. Menolong kasus
+// header ditulis tanpa spasi sama sekali, mis. "MASAKERJA" vs "Masa Kerja".
+function squashHeaderText(h){
+  return normalizeHeaderText(h).replace(/[\s./\\-]/g, '');
+}
+
+// Resolver kolom generik — dipakai untuk UMUM (disposisi) maupun SDM (pensiun),
+// karena keduanya menghadapi masalah yang sama: nama kolom bisa beda-beda
+// walau maknanya sama.
+function buildFieldKeyMap(sampleRawRow, aliasesMap){
+  const rawHeaders = Object.keys(sampleRawRow);
+  const normToActual = {};
+  rawHeaders.forEach(k => { normToActual[normalizeHeaderText(k)] = k; });
+  const keyMap = {};
+  Object.entries(aliasesMap).forEach(([field, candidates]) => {
+    let foundKey = null;
+    // 1) cocok persis (setelah normalisasi)
+    for(const cand of candidates){
+      const actual = normToActual[normalizeHeaderText(cand)];
+      if(actual !== undefined){ foundKey = actual; break; }
+    }
+    // 2) fallback: header yang MENGANDUNG salah satu alias sebagai bagian teks
+    //    (menolong kasus nama kolom sedikit berbeda, mis. "Golongan / Ruang")
+    if(!foundKey){
+      for(const cand of candidates){
+        const normCand = normalizeHeaderText(cand);
+        const match = rawHeaders.find(h => normalizeHeaderText(h).includes(normCand));
+        if(match){ foundKey = match; break; }
+      }
+    }
+    // 3) fallback terakhir: cocokkan tanpa spasi/tanda baca sama sekali
+    //    (menolong header seperti "MASAKERJA" yang ditulis tanpa spasi)
+    if(!foundKey){
+      for(const cand of candidates){
+        const sq = squashHeaderText(cand);
+        const match = rawHeaders.find(h => {
+          const hSq = squashHeaderText(h);
+          return hSq === sq || hSq.includes(sq) || sq.includes(hSq);
+        });
+        if(match){ foundKey = match; break; }
+      }
+    }
+    keyMap[field] = foundKey; // null = kolom ini memang tidak ada di sheet ini
+  });
+  return keyMap;
+}
+
+function mapRowsToUmum(rawRows, jenis){
+  if(!rawRows || rawRows.length === 0) return [];
+  // Header (nama kolom) sama untuk semua baris, jadi aman diambil dari baris pertama
+  // walau baris itu sendiri kosong — ini cuma dipakai untuk mencocokkan nama kolom.
+  const keyMap = buildFieldKeyMap(rawRows[0], UMUM_FIELD_ALIASES);
+  const get = (raw, field) => {
+    const k = keyMap[field];
+    const v = k ? raw[k] : undefined;
+    return (v === null || v === undefined) ? '' : String(v).trim();
+  };
+  const isSubstantive = (raw) => {
+    return get(raw,'perihal') !== '' || get(raw,'suratDari') !== '' || get(raw,'nomorSurat') !== '';
+  };
+  const filled = rawRows.filter(isSubstantive);
+  return filled.map(raw => ({
+    jenis,
+    nomorDispo: get(raw,'nomorDispo'),
+    tglDispo: get(raw,'tglDispo'),
+    tglAgenda: get(raw,'tglAgenda'),
+    suratDariPenerus: get(raw,'suratDariPenerus'),
+    dasarSurat: get(raw,'dasarSurat'),
+    suratDari: get(raw,'suratDari'),
+    noAgendaKepsta: get(raw,'noAgendaKepsta'),
+    nomorSurat: get(raw,'nomorSurat'),
+    perihal: get(raw,'perihal'),
+  }));
+}
+
+let umumLoadStarted = false;
+async function loadUmumData(){
+  if(umumLoadStarted) return;
+  umumLoadStarted = true;
+  const loadingEl = document.getElementById('umumLoadingState');
+  const emptyEl = document.getElementById('umumEmptyState');
+  const wrapEl = document.getElementById('umumTableWrap');
+  loadingEl.style.display = 'block';
+  loadingEl.textContent = 'Memuat data disposisi dari spreadsheet...';
+  emptyEl.style.display = 'none';
+  wrapEl.style.display = 'none';
+  try{
+    const [eksRaw, int1Raw, int2Raw] = await Promise.all([
+      fetchSheetData('UMUM_DISPOEKSTERNAL'),
+      fetchSheetData('UMUM_DISPOINTERNAL'),
+      fetchSheetData('UMUM_DISPOINTERNAL2'),
+    ]);
+    const eks = mapRowsToUmum(eksRaw, 'Eksternal');
+    const int1 = mapRowsToUmum(int1Raw, 'Internal');
+    const int2 = mapRowsToUmum(int2Raw, 'Internal'); // digabung jadi satu jenis "Internal" (tanpa pemisahan sheet)
+    umumAllData = [...eks, ...int1, ...int2];
+    umumCounts = { eks: eks.length, internal: int1.length + int2.length };
+    umumLoaded = true;
+    console.log('[UMUM] Data terisi (setelah baris kosong disaring):', umumCounts);
+    updateBerandaFromUmum();
+    renderUmumKPI();
+    renderUmumCharts();
+    renderUmumTable();
+  }catch(err){
+    console.error('[UMUM] Gagal memuat data disposisi:', err);
+    loadingEl.textContent = 'Gagal memuat data. Pastikan API_URL sudah diisi dan nama sheet persis: UMUM_DISPOEKSTERNAL, UMUM_DISPOINTERNAL, UMUM_DISPOINTERNAL2. Detail error ada di console (F12).';
+    umumLoadStarted = false;
+  }
+}
+
+function renderUmumKPI(){
+  document.getElementById('umumLoadingState').style.display = 'none';
+  const total = umumCounts.eks + umumCounts.internal;
+  document.getElementById('umumKpiTotal').textContent = total.toLocaleString('id-ID');
+  document.getElementById('umumKpiInternal').textContent = umumCounts.internal.toLocaleString('id-ID');
+  document.getElementById('umumKpiEksternal').textContent = umumCounts.eks.toLocaleString('id-ID');
+}
+
+// Menyalurkan total disposisi (data asli, sama dengan Tab Umum) ke kartu KPI di Beranda.
+function updateBerandaFromUmum(){
+  const el = document.getElementById('berandaKpiDisposisi');
+  if(el) el.textContent = (umumCounts.eks + umumCounts.internal).toLocaleString('id-ID');
+}
+
+function renderUmumCharts(){
+  const CYAN = cssVar('--cyan'), VIOLET = cssVar('--violet'), TXTDIM = cssVar('--text-dim');
+
+  const elK = document.getElementById('chartDispoKomposisi');
+  if(elK){
+    if(chartDispoKomposisi){ chartDispoKomposisi.destroy(); chartInstances = chartInstances.filter(c=>c!==chartDispoKomposisi); }
+    chartDispoKomposisi = new Chart(elK, { type:'doughnut',
+      data:{ labels:['Internal','Eksternal'], datasets:[{ data:[umumCounts.internal, umumCounts.eks], backgroundColor:[VIOLET,CYAN], borderWidth:0 }] },
+      options:{ plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:14, color:TXTDIM } } }, cutout:'62%' }
+    });
+    chartInstances.push(chartDispoKomposisi);
+  }
+}
+
+function getFilteredUmumData(){
+  let data = umumAllData;
+  if(umumFilterKey === 'INTERNAL') data = data.filter(d => d.jenis === 'Internal');
+  else if(umumFilterKey === 'EKSTERNAL') data = data.filter(d => d.jenis === 'Eksternal');
+  const q = umumSearchQuery.trim().toLowerCase();
+  if(q){
+    data = data.filter(d =>
+      String(d.nomorSurat).toLowerCase().includes(q) ||
+      String(d.nomorDispo).toLowerCase().includes(q) ||
+      String(d.suratDari).toLowerCase().includes(q) ||
+      String(d.perihal).toLowerCase().includes(q)
+    );
+  }
+  return data;
+}
+
+const UMUM_MAX_ROWS = 200; // batasi baris yang dirender sekaligus agar tabel tetap ringan
+function renderUmumTable(){
+  const data = getFilteredUmumData();
+  const tbody = document.getElementById('umumResultsBody');
+  const wrapEl = document.getElementById('umumTableWrap');
+  const emptyEl = document.getElementById('umumEmptyState');
+
+  if(data.length === 0){
+    tbody.innerHTML = '';
+    wrapEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  wrapEl.style.display = 'block';
+  emptyEl.style.display = 'none';
+
+  const shown = data.slice(0, UMUM_MAX_ROWS);
+  let rowsHtml = shown.map(d => {
+    const pillClass = d.jenis === 'Eksternal' ? 'blue' : 'violet';
+    const perihalRaw = d.perihal || '';
+    const perihalShort = perihalRaw.length > 55 ? perihalRaw.slice(0,55) + '…' : (perihalRaw || '-');
+    const idx = umumAllData.indexOf(d);
+    return `<tr class="umum-row" data-idx="${idx}">
+      <td><span class="pill ${pillClass}">${d.jenis}</span></td>
+      <td class="mono">${d.nomorDispo || '-'}</td>
+      <td class="mono">${d.tglDispo || '-'}</td>
+      <td>${d.suratDari || '-'}</td>
+      <td class="mono">${d.nomorSurat || '-'}</td>
+      <td>${perihalShort}</td>
+    </tr>`;
+  }).join('');
+  if(data.length > UMUM_MAX_ROWS){
+    rowsHtml += `<tr><td colspan="6" style="text-align:center; color:var(--text-faint); font-size:11.5px; padding-top:14px;">Menampilkan ${UMUM_MAX_ROWS} dari ${data.length} hasil — persempit pencarian untuk hasil lebih spesifik.</td></tr>`;
+  }
+  tbody.innerHTML = rowsHtml;
+}
+
+document.querySelectorAll('#umumFilterRow .filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#umumFilterRow .filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    umumFilterKey = chip.dataset.key;
+    renderUmumTable();
+  });
+});
+document.getElementById('umumSearchInput').addEventListener('input', (e) => {
+  umumSearchQuery = e.target.value;
+  renderUmumTable();
+});
+
+// Event delegation untuk klik baris tabel -> buka detail
+document.getElementById('umumResultsBody').addEventListener('click', (e) => {
+  const tr = e.target.closest('tr.umum-row');
+  if(!tr) return;
+  const idx = parseInt(tr.dataset.idx, 10);
+  openDispoDetail(umumAllData[idx]);
+});
+
+// Modal detail generik — dipakai untuk detail disposisi (UMUM) dan detail
+// proyeksi pensiun (SDM). Hanya field yang benar-benar terisi yang ditampilkan.
+function openDetailModal(title, fields){
+  document.getElementById('detailModalTitle').textContent = title;
+  const shown = fields.filter(([_, v]) => v !== '' && v !== undefined && v !== null);
+  document.getElementById('dispoModalContent').innerHTML = shown.map(([k,v]) =>
+    `<div class="detail-row"><span class="dk">${k}</span><span class="dv">${v}</span></div>`
+  ).join('');
+  document.getElementById('dispoModalOverlay').classList.add('active');
+}
+
+function openDispoDetail(d){
+  if(!d) return;
+  openDetailModal('Detail Disposisi', [
+    ['Jenis', d.jenis],
+    ['Nomor Dispo TU', d.nomorDispo],
+    ['TGL Dispo TU', d.tglDispo],
+    ['TGL Agenda Kepsta', d.tglAgenda],
+    ['Surat dari Penerus ke Kepsta', d.suratDariPenerus],
+    ['Dasar Surat', d.dasarSurat],
+    ['Surat Dari', d.suratDari],
+    ['No Agenda Kepsta', d.noAgendaKepsta],
+    ['Nomor Surat', d.nomorSurat],
+    ['Perihal', d.perihal],
+  ]);
+}
+function closeDispoModal(){
+  document.getElementById('dispoModalOverlay').classList.remove('active');
+}
+document.getElementById('dispoModalCloseBtn').addEventListener('click', closeDispoModal);
+document.getElementById('dispoModalOverlay').addEventListener('click', (e) => {
+  if(e.target.id === 'dispoModalOverlay') closeDispoModal();
+});
+
+/* ======================================================================
+   TAB SDM — Kepegawaian
+   sdmDirectory  : hasil join Data Pegawai + 7 unit kerja (dari Apps Script,
+                   NIP/No HP/Email/Tanggal Lahir tidak pernah dikirim)
+   sdmPensiunList: daftar pegawai pensiun 2026-2028
+   ====================================================================== */
+let sdmDirectory = [];
+let sdmPensiunList = [];
+let sdmLoaded = false;
+
+const PENSIUN_FIELD_ALIASES = {
+  nama: ['Nama'],
+  jabatan: ['Jabatan TMT', 'Jabatan'],
+  golongan: ['Gol.TMT', 'Gol TMT', 'Golongan', 'Golongan/Ruang', 'Golongan / Ruang', 'Gol/Ruang', 'Gol'],
+  masaKerja: ['Masa Kerja', 'Masa Kerja (Tahun)', 'Masa Kerja Tahun'],
+  tmtPensiun: ['TMT Pensiun', 'TMTPENSIUN', 'TMT PENSIUN'],
+  unitKerja: ['Unit Kerja', 'UNIT KERJA'],
+};
+
+function mapRowsToPensiun(rawRows){
+  if(!rawRows || rawRows.length === 0) return [];
+  const keyMap = buildFieldKeyMap(rawRows[0], PENSIUN_FIELD_ALIASES);
+  const get = (raw, field) => {
+    const k = keyMap[field];
+    const v = k ? raw[k] : undefined;
+    return (v === null || v === undefined) ? '' : String(v).trim();
+  };
+  return rawRows
+    .filter(raw => get(raw,'nama') !== '') // baris tanpa nama dianggap kosong
+    .map(raw => ({
+      nama: get(raw,'nama'),
+      jabatan: get(raw,'jabatan'),
+      golongan: get(raw,'golongan'),
+      masaKerja: get(raw,'masaKerja'),
+      tmtPensiunRaw: get(raw,'tmtPensiun'),
+      tmtPensiunTahun: extractYear(get(raw,'tmtPensiun')),
+      unitKerja: get(raw,'unitKerja'),
+    }))
+    .sort((a,b) => (a.tmtPensiunTahun || 9999) - (b.tmtPensiunTahun || 9999));
+}
+
+function extractYear(val){
+  if(!val) return null;
+  const match = String(val).match(/(20\d{2})/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+function pensiunBadge(tahun){
+  if(tahun === 2026) return { label:'2026 · Segera', cls:'red' };
+  if(tahun === 2027) return { label:'2027 · Dekat', cls:'amber' };
+  if(tahun === 2028) return { label:'2028 · Direncanakan', cls:'blue' };
+  return { label: tahun ? String(tahun) : '-', cls:'violet' };
+}
+
+// Beberapa tanggal dari Apps Script bocor sebagai string ISO lengkap dengan
+// jam (mis. "2026-03-15T00:00:00.000Z") karena aslinya adalah objek Date di
+// Google Sheets. Fungsi ini merapikannya jadi DD-MM-YYYY tanpa jam; kalau
+// nilainya bukan pola tanggal ISO (mis. cuma "2026" polos), ditampilkan apa
+// adanya.
+function formatTanggalPensiun(raw){
+  if(!raw) return '-';
+  const str = String(raw).trim();
+  if(!str) return '-';
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(isoMatch){
+    const [, yyyy, mm, dd] = isoMatch;
+    return `${dd}-${mm}-${yyyy}`;
+  }
+  return str;
+}
+
+function usiaToGenerasi(usiaVal){
+  const n = parseInt(usiaVal, 10);
+  if(isNaN(n)) return null;
+  if(n <= 29) return 'Gen Z';
+  if(n <= 45) return 'Milenial';
+  if(n <= 61) return 'Gen X';
+  return 'Baby Boomer';
+}
+function usiaToBucket(usiaVal){
+  const n = parseInt(usiaVal, 10);
+  if(isNaN(n)) return null;
+  if(n <= 30) return '20–30';
+  if(n <= 40) return '31–40';
+  if(n <= 50) return '41–50';
+  if(n <= 60) return '51–60';
+  return '>60';
+}
+function golonganMajor(golVal){
+  if(!golVal) return null;
+  const match = String(golVal).trim().match(/^(IV|III|II|I)\b/i);
+  return match ? match[1].toUpperCase() : 'Lainnya';
+}
+// Konversi angka Romawi (I..XVII cukup) ke integer.
+function romanToInt(str){
+  if(!str) return null;
+  const map = { I:1, V:5, X:10, L:50, C:100, D:500, M:1000 };
+  const s = String(str).trim().toUpperCase();
+  if(!s || !/^[IVXLCDM]+$/.test(s)) return null;
+  let total = 0;
+  for(let i=0;i<s.length;i++){
+    const cur = map[s[i]];
+    const next = map[s[i+1]];
+    total += (next !== undefined && cur < next) ? -cur : cur;
+  }
+  return total > 0 ? total : null;
+}
+// Ambil token angka Romawi di awal nilai Golongan, mengabaikan sub-huruf
+// PNS seperti "/a" pada "IV/a" (a/b/c/d bukan huruf Romawi jadi otomatis
+// tidak ikut ke-capture).
+function extractGolonganToken(golVal){
+  if(!golVal) return null;
+  const match = String(golVal).trim().match(/^([IVXLCDM]+)/i);
+  return match ? match[1].toUpperCase() : null;
+}
+// Kolom "Golongan" menampung dua jenis data berbeda tergantung status pegawai:
+// PNS pakai Golongan I–IV, PPPK pakai Grade — KEDUANYA ditulis dalam angka
+// Romawi (Grade PPPK bukan angka arab 1-17, tapi tetap I-XVII). Diklasifikasi
+// berdasarkan NILAI angka Romawi-nya (1-4 = PNS, 5-17 = PPPK), bukan dari
+// pola teks semata, supaya tidak salah kelompok.
+function golonganStatus(golVal){
+  const token = extractGolonganToken(golVal);
+  if(!token) return null;
+  const n = romanToInt(token);
+  if(n === null) return null;
+  if(n >= 1 && n <= 4) return 'PNS';
+  if(n >= 5 && n <= 17) return 'PPPK';
+  return null;
+}
+function pppkGrade(golVal){
+  const token = extractGolonganToken(golVal);
+  if(!token) return null;
+  const n = romanToInt(token);
+  return (n !== null && n >= 5 && n <= 17) ? token : null;
+}
+
+async function loadSdmData(){
+  const loadingEl = document.getElementById('sdmLoadingState');
+  loadingEl.style.display = 'block';
+  loadingEl.textContent = 'Memuat data kepegawaian dari spreadsheet...';
+  try{
+    const [directory, pensiunRaw] = await Promise.all([
+      fetchSdmDirectory(),
+      fetchSheetData('PENSIUN_2026_2028', 'SDM'),
+    ]);
+    sdmDirectory = (directory || []).map(p => ({
+      ...p,
+      // "Belum Diketahui" berasal dari default di Apps Script untuk pegawai
+      // yang NIP-nya tidak cocok ke salah satu dari 7 unit kerja — di
+      // dashboard ini ditampilkan sebagai "Lainnya" saja.
+      unitKerja: (!p.unitKerja || p.unitKerja === 'Belum Diketahui') ? 'Lainnya' : p.unitKerja,
+    }));
+    sdmPensiunList = mapRowsToPensiun(pensiunRaw);
+    sdmLoaded = true;
+    loadingEl.style.display = 'none';
+    console.log('[SDM] Data pegawai:', sdmDirectory.length, '| Data pensiun:', sdmPensiunList.length);
+    renderSdmKPI();
+    renderSdmCharts();
+    renderSdmPensiunTable();
+    updateBerandaFromSdm();
+  }catch(err){
+    console.error('[SDM] Gagal memuat data SDM:', err);
+    loadingEl.textContent = 'Gagal memuat data SDM. Pastikan API_URL benar dan Apps Script sudah mendukung ?action=sdm_directory serta sheet PENSIUN_2026_2028. Detail error ada di console (F12).';
+  }
+}
+
+function renderSdmKPI(){
+  const total = sdmDirectory.length;
+  document.getElementById('sdmKpiTotal').textContent = total.toLocaleString('id-ID');
+
+  const usiaValues = sdmDirectory.map(p => parseInt(p.usia,10)).filter(n => !isNaN(n));
+  const rataUsia = usiaValues.length ? Math.round(usiaValues.reduce((a,b)=>a+b,0)/usiaValues.length) : 0;
+  document.getElementById('sdmKpiUsia').textContent = usiaValues.length ? rataUsia : '–';
+
+  const pensiunDekat = sdmPensiunList.filter(p => p.tmtPensiunTahun === 2026 || p.tmtPensiunTahun === 2027).length;
+  document.getElementById('sdmKpiPensiun').textContent = pensiunDekat.toLocaleString('id-ID');
+
+  const laki = sdmDirectory.filter(p => String(p.jenisKelamin).toLowerCase().includes('laki')).length;
+  const perempuan = sdmDirectory.filter(p => String(p.jenisKelamin).toLowerCase().includes('perempuan')).length;
+  document.getElementById('sdmKpiGender').textContent = (laki || perempuan) ? `${laki} : ${perempuan}` : '–';
+}
+
+function countBy(list, fn){
+  const map = {};
+  list.forEach(item => {
+    const key = fn(item);
+    if(key === null || key === undefined || key === '') return;
+    map[key] = (map[key] || 0) + 1;
+  });
+  return map;
+}
+
+let chartSdmGenerasi = null, chartSdmGolongan = null, chartSdmUnitKerja = null, chartSdmJabatan = null;
+let sdmGolonganFilterKey = 'PNS';
+function renderSdmGolonganChart(){
+  const VIOLET = cssVar('--violet'), TXTDIM = cssVar('--text-dim'), GRID = cssVar('--grid');
+  const elGol = document.getElementById('chartSdmGolongan');
+  if(!elGol) return;
+
+  let labels, data;
+  if(sdmGolonganFilterKey === 'PPPK'){
+    const pppkCount = countBy(sdmDirectory.filter(p => golonganStatus(p.golongan) === 'PPPK'), p => pppkGrade(p.golongan));
+    const order = Object.keys(pppkCount).sort((a,b) => romanToInt(a) - romanToInt(b));
+    labels = order.map(g => 'Grade ' + g);
+    data = order.map(k => pppkCount[k]);
+  } else {
+    const pnsCount = countBy(sdmDirectory.filter(p => golonganStatus(p.golongan) === 'PNS'), p => golonganMajor(p.golongan));
+    const order = ['IV','III','II','I'].filter(k => pnsCount[k]);
+    labels = order.map(g => 'Gol. ' + g);
+    data = order.map(k => pnsCount[k]);
+  }
+
+  if(chartSdmGolongan){ chartSdmGolongan.destroy(); chartInstances = chartInstances.filter(c=>c!==chartSdmGolongan); }
+  chartSdmGolongan = new Chart(elGol, { type:'bar',
+    data:{ labels, datasets:[{ data, backgroundColor: VIOLET, borderRadius:8 }] },
+    options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ grid:{ color:GRID }, ticks:{ color:TXTDIM } }, x:{ grid:{ display:false }, ticks:{ color:TXTDIM } } } }
+  });
+  chartInstances.push(chartSdmGolongan);
+}
+document.querySelectorAll('#sdmGolonganFilterRow .filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#sdmGolonganFilterRow .filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    sdmGolonganFilterKey = chip.dataset.key;
+    renderSdmGolonganChart();
+  });
+});
+function renderSdmCharts(){
+  const CYAN = cssVar('--cyan'), VIOLET = cssVar('--violet'), AMBER = cssVar('--amber'),
+        CORAL = cssVar('--coral'), MINT = cssVar('--mint'), TXTDIM = cssVar('--text-dim'), GRID = cssVar('--grid');
+  const palette = [CYAN, VIOLET, AMBER, CORAL, MINT];
+
+  const generasiCount = countBy(sdmDirectory, p => usiaToGenerasi(p.usia));
+  const generasiOrder = ['Gen Z','Milenial','Gen X','Baby Boomer'].filter(k => generasiCount[k]);
+  const elGen = document.getElementById('chartSdmGenerasi');
+  if(elGen){
+    if(chartSdmGenerasi){ chartSdmGenerasi.destroy(); chartInstances = chartInstances.filter(c=>c!==chartSdmGenerasi); }
+    chartSdmGenerasi = new Chart(elGen, { type:'doughnut',
+      data:{ labels: generasiOrder, datasets:[{ data: generasiOrder.map(k=>generasiCount[k]), backgroundColor: palette, borderWidth:0 }] },
+      options:{ plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:14, color:TXTDIM } } }, cutout:'62%' }
+    });
+    chartInstances.push(chartSdmGenerasi);
+  }
+
+  renderSdmGolonganChart();
+
+  const unitCount = countBy(sdmDirectory, p => p.unitKerja);
+  const unitOrder = Object.keys(unitCount).sort((a,b)=>unitCount[b]-unitCount[a]);
+  const elUnit = document.getElementById('chartSdmUnitKerja');
+  if(elUnit){
+    if(chartSdmUnitKerja){ chartSdmUnitKerja.destroy(); chartInstances = chartInstances.filter(c=>c!==chartSdmUnitKerja); }
+    chartSdmUnitKerja = new Chart(elUnit, { type:'bar',
+      data:{ labels: unitOrder, datasets:[{ data: unitOrder.map(k=>unitCount[k]), backgroundColor: CYAN, borderRadius:8 }] },
+      options:{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ color:GRID }, ticks:{ color:TXTDIM } }, y:{ grid:{ display:false }, ticks:{ color:TXTDIM } } } }
+    });
+    chartInstances.push(chartSdmUnitKerja);
+  }
+
+  const jabatanCount = countBy(sdmDirectory, p => (p.jabatan||'').trim());
+  const jabatanTop = Object.keys(jabatanCount).sort((a,b)=>jabatanCount[b]-jabatanCount[a]).slice(0,8);
+  const elJab = document.getElementById('chartSdmJabatan');
+  if(elJab){
+    if(chartSdmJabatan){ chartSdmJabatan.destroy(); chartInstances = chartInstances.filter(c=>c!==chartSdmJabatan); }
+    chartSdmJabatan = new Chart(elJab, { type:'bar',
+      data:{ labels: jabatanTop.map(j => j.length>28 ? j.slice(0,28)+'…' : j), datasets:[{ data: jabatanTop.map(k=>jabatanCount[k]), backgroundColor: AMBER, borderRadius:8 }] },
+      options:{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ color:GRID }, ticks:{ color:TXTDIM } }, y:{ grid:{ display:false }, ticks:{ color:TXTDIM } } } }
+    });
+    chartInstances.push(chartSdmJabatan);
+  }
+}
+
+function renderSdmPensiunTable(){
+  const tbody = document.getElementById('sdmPensiunBody');
+  const wrapEl = document.getElementById('sdmPensiunTableWrap');
+  const emptyEl = document.getElementById('sdmPensiunEmptyState');
+  if(sdmPensiunList.length === 0){
+    wrapEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  wrapEl.style.display = 'block';
+  emptyEl.style.display = 'none';
+  tbody.innerHTML = sdmPensiunList.map((p, idx) => {
+    const badge = pensiunBadge(p.tmtPensiunTahun);
+    return `<tr class="umum-row sdm-pensiun-row" data-idx="${idx}">
+      <td>${p.nama || '-'}</td>
+      <td class="mono">${formatTanggalPensiun(p.tmtPensiunRaw)}</td>
+      <td class="mono">${p.golongan || '-'}</td>
+      <td>${p.unitKerja || '-'}</td>
+      <td class="mono">${p.masaKerja || '-'}</td>
+      <td><span class="pill ${badge.cls}">${badge.label}</span></td>
+    </tr>`;
+  }).join('');
+}
+document.getElementById('sdmPensiunBody').addEventListener('click', (e) => {
+  const tr = e.target.closest('tr.sdm-pensiun-row');
+  if(!tr) return;
+  const idx = parseInt(tr.dataset.idx, 10);
+  const p = sdmPensiunList[idx];
+  if(!p) return;
+  const badge = pensiunBadge(p.tmtPensiunTahun);
+  openDetailModal('Detail Proyeksi Pensiun', [
+    ['Nama', p.nama],
+    ['Jabatan', p.jabatan],
+    ['Golongan', p.golongan],
+    ['Unit Kerja', p.unitKerja],
+    ['Masa Kerja', p.masaKerja],
+    ['Perkiraan Pensiun', badge.label],
+  ]);
+});
+
+// Menyalurkan data asli SDM ke KPI & grafik Komposisi SDM di Beranda,
+// menggantikan angka dummy begitu data tersedia.
+function updateBerandaFromSdm(){
+  const kpiPegawai = document.getElementById('berandaKpiPegawai');
+  const kpiPensiun = document.getElementById('berandaKpiPensiun');
+  if(kpiPegawai) kpiPegawai.textContent = sdmDirectory.length.toLocaleString('id-ID');
+  if(kpiPensiun){
+    const pensiunDekat = sdmPensiunList.filter(p => p.tmtPensiunTahun === 2026 || p.tmtPensiunTahun === 2027).length;
+    kpiPensiun.textContent = pensiunDekat.toLocaleString('id-ID');
+  }
+
+  const generasiCount = countBy(sdmDirectory, p => usiaToGenerasi(p.usia));
+  const generasiOrder = ['Gen Z','Milenial','Gen X','Baby Boomer'].filter(k => generasiCount[k]);
+  const usiaCount = countBy(sdmDirectory, p => usiaToBucket(p.usia));
+  const usiaOrder = ['20–30','31–40','41–50','51–60','>60'].filter(k => usiaCount[k]);
+  const jabatanCount = countBy(sdmDirectory, p => (p.jabatan||'').trim());
+  const jabatanTop = Object.keys(jabatanCount).sort((a,b)=>jabatanCount[b]-jabatanCount[a]).slice(0,6);
+  const unitCount = countBy(sdmDirectory, p => p.unitKerja);
+  const unitOrder = Object.keys(unitCount).sort((a,b)=>unitCount[b]-unitCount[a]);
+
+  if(generasiOrder.length){
+    sdmComposition.GENERASI = { type:'doughnut', labels: generasiOrder, data: generasiOrder.map(k=>generasiCount[k]) };
+  }
+  if(usiaOrder.length){
+    sdmComposition.USIA = { type:'doughnut', labels: usiaOrder, data: usiaOrder.map(k=>usiaCount[k]) };
+  }
+  if(jabatanTop.length){
+    sdmComposition.JABATAN = { type:'bar', labels: jabatanTop.map(j => j.length>18 ? j.slice(0,18)+'…' : j), data: jabatanTop.map(k=>jabatanCount[k]) };
+  }
+  if(unitOrder.length){
+    sdmComposition.UNIT_KERJA = { type:'bar', labels: unitOrder, data: unitOrder.map(k=>unitCount[k]) };
+  }
+  // render ulang chart Beranda yang sedang aktif dengan data asli di atas
+  const old = chartInstances.find(c=>c.canvas && c.canvas.id==='chartSDMBeranda');
+  if(old){ old.destroy(); chartInstances = chartInstances.filter(c=>c!==old); }
+  renderSDMChart(sdmActiveKey);
+}
+
+/* ======================================================================
+   TAB KEUANGAN — Dokumen SPM & SPBY
+   keuanganData: { spm:{monthly:[{bulan,dibayarkan,diarsipkan,belumDiarsipkan,persentaseArsip}], total:{...}},
+                   spby:{...sama...} }
+   Baris TOTAL dipisah dari data bulanan di sisi server — grafik HANYA memakai
+   monthly, dan tidak pernah menambah bulan yang belum ada datanya.
+   ====================================================================== */
+let keuanganData = null;
+let keuanganLoaded = false;
+let keuanganLoadStarted = false;
+
+const BULAN_PENDEK = {
+  'januari':'Jan','februari':'Feb','maret':'Mar','april':'Apr','mei':'Mei','juni':'Jun',
+  'juli':'Jul','agustus':'Agu','september':'Sep','oktober':'Okt','november':'Nov','desember':'Des',
+};
+function shortBulan(b){
+  const key = String(b).trim().toLowerCase();
+  return BULAN_PENDEK[key] || b;
+}
+function fmtPersen(n){
+  return n.toLocaleString('id-ID', { minimumFractionDigits:2, maximumFractionDigits:2 }) + '%';
+}
+
+async function loadKeuanganData(){
+  if(keuanganLoadStarted) return;
+  keuanganLoadStarted = true;
+  const loadingEl = document.getElementById('keuanganLoadingState');
+  const contentEl = document.getElementById('keuanganContent');
+  loadingEl.style.display = 'block';
+  loadingEl.textContent = 'Memuat data keuangan dari spreadsheet...';
+  contentEl.style.display = 'none';
+  try{
+    keuanganData = await fetchKeuanganData();
+    keuanganLoaded = true;
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'block';
+    renderKeuanganKPI();
+    renderKeuanganCharts();
+  }catch(err){
+    console.error('[KEUANGAN] Gagal memuat data:', err);
+    loadingEl.textContent = 'Gagal memuat data KEUANGAN. Pastikan Apps Script sudah mendukung ?action=keuangan_data dan nama sheet persis: KEUANGAN. Detail error ada di console (F12).';
+    keuanganLoadStarted = false;
+  }
+}
+
+function renderKeuanganKPI(){
+  const spmTotal = keuanganData.spm && keuanganData.spm.total;
+  const spbyTotal = keuanganData.spby && keuanganData.spby.total;
+
+  const spmDibayar = Number(spmTotal && spmTotal.dibayarkan) || 0;
+  const spmDiarsip = Number(spmTotal && spmTotal.diarsipkan) || 0;
+  const spmBelum = Number(spmTotal && spmTotal.belumDiarsipkan) || 0;
+
+  const spbyDibayar = Number(spbyTotal && spbyTotal.dibayarkan) || 0;
+  const spbyDiarsip = Number(spbyTotal && spbyTotal.diarsipkan) || 0;
+  const spbyBelum = Number(spbyTotal && spbyTotal.belumDiarsipkan) || 0;
+
+  document.getElementById('keuKpiTotalSpm').textContent = spmTotal ? spmDibayar.toLocaleString('id-ID') : '–';
+  document.getElementById('keuKpiTotalSpby').textContent = spbyTotal ? spbyDibayar.toLocaleString('id-ID') : '–';
+
+  const spmPct = spmDibayar > 0 ? (spmDiarsip / spmDibayar * 100) : 0;
+  const spbyPct = spbyDibayar > 0 ? (spbyDiarsip / spbyDibayar * 100) : 0;
+  document.getElementById('keuKpiArsipSpmPct').textContent = spmTotal ? fmtPersen(spmPct) : '–';
+  document.getElementById('keuKpiArsipSpmFrac').textContent = spmTotal ? `${spmDiarsip.toLocaleString('id-ID')} / ${spmDibayar.toLocaleString('id-ID')}` : '';
+  document.getElementById('keuKpiArsipSpbyPct').textContent = spbyTotal ? fmtPersen(spbyPct) : '–';
+  document.getElementById('keuKpiArsipSpbyFrac').textContent = spbyTotal ? `${spbyDiarsip.toLocaleString('id-ID')} / ${spbyDibayar.toLocaleString('id-ID')}` : '';
+
+  const totalBelum = spmBelum + spbyBelum;
+  document.getElementById('keuKpiBelumArsip').textContent = (spmTotal || spbyTotal) ? totalBelum.toLocaleString('id-ID') : '–';
+  document.getElementById('keuKpiBelumArsipDetail').textContent = (spmTotal || spbyTotal) ? `${spmBelum.toLocaleString('id-ID')} SPM · ${spbyBelum.toLocaleString('id-ID')} SPBY` : '';
+}
+
+let chartKeuanganSpm = null, chartKeuanganSpby = null;
+function buildKeuanganChart(canvasId, monthly, existingChart, CYAN, VIOLET, TXTDIM, GRID){
+  const el = document.getElementById(canvasId);
+  if(!el) return null;
+  if(existingChart){ existingChart.destroy(); chartInstances = chartInstances.filter(c=>c!==existingChart); }
+  const labels = monthly.map(m => shortBulan(m.bulan));
+  const dibayarkan = monthly.map(m => Number(m.dibayarkan) || 0);
+  const diarsipkan = monthly.map(m => Number(m.diarsipkan) || 0);
+  const chart = new Chart(el, { type:'bar',
+    data:{ labels, datasets:[
+      { label:'Dibayarkan', data:dibayarkan, backgroundColor:CYAN, borderRadius:6 },
+      { label:'Diarsipkan', data:diarsipkan, backgroundColor:VIOLET, borderRadius:6 },
+    ]},
+    options:{ plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:14, color:TXTDIM } } },
+      scales:{ y:{ grid:{ color:GRID }, ticks:{ color:TXTDIM } }, x:{ grid:{ display:false }, ticks:{ color:TXTDIM } } } }
+  });
+  chartInstances.push(chart);
+  return chart;
+}
+function renderKeuanganCharts(){
+  const CYAN = cssVar('--cyan'), VIOLET = cssVar('--violet'), TXTDIM = cssVar('--text-dim'), GRID = cssVar('--grid');
+  chartKeuanganSpm = buildKeuanganChart('chartKeuanganSpm', keuanganData.spm.monthly, chartKeuanganSpm, CYAN, VIOLET, TXTDIM, GRID);
+  chartKeuanganSpby = buildKeuanganChart('chartKeuanganSpby', keuanganData.spby.monthly, chartKeuanganSpby, CYAN, VIOLET, TXTDIM, GRID);
+}
+
+function switchView(viewId){
+  const target = document.getElementById(viewId);
+  if(!target) return;
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const navBtn = document.querySelector(`nav button[data-view="${viewId}"]`);
+  if(navBtn) navBtn.classList.add('active');
+  target.classList.add('active');
+  if(viewId==='transmisi') initMap();
+  if(viewId==='umum' && !umumLoaded) loadUmumData();
+  if(viewId==='keuangan' && !keuanganLoaded) loadKeuanganData();
+}
+
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=> switchView(btn.dataset.view));
+});
+
+// Event delegation: any element with data-goto (KPI cards, attention list rows) navigates tabs
+document.addEventListener('click', (e)=>{
+  const el = e.target.closest('[data-goto]');
+  if(el) switchView(el.dataset.goto);
+});
+
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+const platforms = [
+  {name:'Instagram', meta:'@tvrisumsel_official', val:'62.4K', icon:'IG', cls:'p-ig'},
+  {name:'Facebook', meta:'TVRI Sumatera Selatan', val:'48.1K', icon:'FB', cls:'p-fb'},
+  {name:'YouTube', meta:'TVRI Sumsel', val:'29.8K', icon:'YT', cls:'p-yt'},
+  {name:'TikTok', meta:'@tvrisumsel', val:'57.4K', icon:'TT', cls:'p-tt'},
+  {name:'X (Twitter)', meta:'@tvrisumsel', val:'7.9K', icon:'X', cls:'p-x'},
+];
+const towers = [
+  {name:'Pemancar Palembang', loc:'Bukit Siguntang, Palembang', power:1000, cap:1000, uptime:23.5, status:'Aktif', lat:-2.9800, lng:104.7350, freq:'UHF 30'},
+  {name:'Pemancar Lahat', loc:'Bukit Serelo, Lahat', power:300, cap:500, uptime:22.0, status:'Aktif', lat:-3.7952, lng:103.5350, freq:'UHF 26'},
+  {name:'Pemancar Lubuklinggau', loc:'Bukit Sulap, Lubuklinggau', power:400, cap:500, uptime:23.0, status:'Aktif', lat:-3.2971, lng:102.8619, freq:'UHF 28'},
+  {name:'Pemancar OKU', loc:'Baturaja, OKU', power:250, cap:300, uptime:21.5, status:'Aktif', lat:-4.1285, lng:104.1707, freq:'UHF 24'},
+  {name:'Pemancar Muara Enim', loc:'Muara Enim', power:0, cap:250, uptime:0, status:'Maintenance', lat:-3.6552, lng:103.8090, freq:'UHF 32'},
+];
+
+document.getElementById('platformList').innerHTML = platforms.map(p=>`
+  <div class="platform-row">
+    <div class="p-icon ${p.cls}">${p.icon}</div>
+    <div class="p-info"><div class="p-name">${p.name}</div><div class="p-meta">${p.meta}</div></div>
+    <div class="p-val">${p.val}</div>
+  </div>`).join('');
+
+document.getElementById('towerFull').innerHTML = towers.map(t=>{
+  const pct = Math.round((t.power/t.cap)*100);
+  const statusPill = t.status==='Aktif' ? '<span class="pill green">Aktif</span>' : '<span class="pill amber">Maintenance</span>';
+  return `<div class="tower-card glass">
+    <div class="tower-head">
+      <div><div class="tower-name">${t.name}</div><div class="tower-loc">${t.loc}</div></div>
+      ${statusPill}
+    </div>
+    <div class="tower-metrics">
+      <div><div class="tm-label">Daya Pancar</div><div class="tm-val">${t.power} W</div></div>
+      <div><div class="tm-label">Kapasitas Maks</div><div class="tm-val">${t.cap} W</div></div>
+      <div><div class="tm-label">Jam Operasi/Hari</div><div class="tm-val">${t.uptime} jam</div></div>
+    </div>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%; ${pct===0?'background:var(--coral);':''}"></div></div>
+  </div>`;
+}).join('');
+
+// ===== Perhatian Manajemen (Beranda Baris 4) — agregasi lintas modul =====
+const attentionItems = [
+  {level:'red', text:'2 pemancar dalam kondisi gangguan/maintenance', goto:'transmisi'},
+  {level:'amber', text:'9 pegawai akan memasuki masa pensiun ≤ 2 tahun', goto:'sdm'},
+  {level:'amber', text:'18 surat masih dalam proses', goto:'umum'},
+  {level:'amber', text:'32 aset BMN memerlukan perhatian', goto:'bmn'},
+];
+document.getElementById('attentionList').innerHTML = attentionItems.map(a=>`
+  <div class="attention-row" data-goto="${a.goto}">
+    <span class="attn-dot ${a.level}"></span>
+    <span class="attn-text">${a.text}</span>
+    <span class="attn-arrow">${a.goto.toUpperCase()} →</span>
+  </div>`).join('');
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11.5;
+let chartInstances = [];
+function grad(ctx, color){
+  const g = ctx.createLinearGradient(0,0,0,240);
+  g.addColorStop(0, color+'66');
+  g.addColorStop(1, color+'02');
+  return g;
+}
+function mkChart(id, config){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const c = new Chart(el, config);
+  chartInstances.push(c);
+  return c;
+}
+function destroyAllCharts(){ chartInstances.forEach(c=>c.destroy()); chartInstances = []; }
+
+// ===== Beranda Baris 2 — Grafik interaktif dengan filter =====
+const followersSeries = {
+  labels:['Feb','Mar','Apr','Mei','Jun','Jul'],
+  TOTAL:     [172000,180500,187800,194200,200600,205600],
+  INSTAGRAM: [50200,53400,56800,59500,61200,62400],
+  FACEBOOK:  [40500,42300,44100,45800,47200,48100],
+  YOUTUBE:   [20100,22400,24600,26800,28300,29800],
+  TIKTOK:    [35800,40200,45100,50300,54200,57400],
+  X:         [5200,5900,6500,7100,7600,7900],
+};
+let followersActiveKey = 'TOTAL';
+function renderFollowersChart(key){
+  const CYAN = cssVar('--cyan'), TXTDIM = cssVar('--text-dim'), GRID = cssVar('--grid');
+  const el = document.getElementById('chartFollowersBeranda');
+  if(!el) return;
+  const c = new Chart(el, { type:'line',
+    data:{labels:followersSeries.labels,
+      datasets:[{label:key==='TOTAL'?'Total Followers':key, data:followersSeries[key],
+        borderColor:CYAN, backgroundColor:(ctx)=>grad(ctx.chart.ctx,CYAN), fill:true, tension:.35, pointRadius:3, pointBackgroundColor:CYAN}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{grid:{color:GRID}, ticks:{color:TXTDIM}}, x:{grid:{display:false}, ticks:{color:TXTDIM}}}}
+  });
+  chartInstances.push(c);
+  return c;
+}
+document.querySelectorAll('#followersFilterRow .filter-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#followersFilterRow .filter-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    followersActiveKey = chip.dataset.key;
+    const old = chartInstances.find(c=>c.canvas.id==='chartFollowersBeranda');
+    if(old){ old.destroy(); chartInstances = chartInstances.filter(c=>c!==old); }
+    renderFollowersChart(followersActiveKey);
+  });
+});
+
+const sdmComposition = {
+  GENERASI:   {type:'doughnut', labels:['Gen X','Milenial','Baby Boomer','Gen Z'], data:[38,41,22,25]},
+  USIA:       {type:'doughnut', labels:['20–30','31–40','41–50','51–60','>60'], data:[18,34,40,28,6]},
+  JABATAN:    {type:'bar', labels:['Teknis','Administrasi','Fungsional','Struktural'], data:[45,31,28,22]},
+  UNIT_KERJA: {type:'bar', labels:['Teknik','Produksi','Berita','Umum','KMB'], data:[26,30,24,25,21]},
+};
+let sdmActiveKey = 'GENERASI';
+function renderSDMChart(key){
+  const CYAN=cssVar('--cyan'), VIOLET=cssVar('--violet'), AMBER=cssVar('--amber'), CORAL=cssVar('--coral'), MINT=cssVar('--mint'),
+        TXTDIM=cssVar('--text-dim'), GRID=cssVar('--grid');
+  const palette=[CYAN,VIOLET,AMBER,CORAL,MINT];
+  const el = document.getElementById('chartSDMBeranda');
+  if(!el) return;
+  const data = sdmComposition[key];
+  let c;
+  if(data.type==='doughnut'){
+    c = new Chart(el, {type:'doughnut',
+      data:{labels:data.labels, datasets:[{data:data.data, backgroundColor:palette, borderWidth:0}]},
+      options:{plugins:{legend:{position:'bottom', labels:{boxWidth:10, padding:14, color:TXTDIM}}}, cutout:'62%'}
+    });
+  } else {
+    c = new Chart(el, {type:'bar',
+      data:{labels:data.labels, datasets:[{data:data.data, backgroundColor:VIOLET, borderRadius:8}]},
+      options:{plugins:{legend:{display:false}}, scales:{y:{grid:{color:GRID}, ticks:{color:TXTDIM}}, x:{grid:{display:false}, ticks:{color:TXTDIM}}}}
+    });
+  }
+  chartInstances.push(c);
+  return c;
+}
+document.querySelectorAll('#sdmFilterRow .filter-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#sdmFilterRow .filter-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    sdmActiveKey = chip.dataset.key;
+    const old = chartInstances.find(c=>c.canvas.id==='chartSDMBeranda');
+    if(old){ old.destroy(); chartInstances = chartInstances.filter(c=>c!==old); }
+    renderSDMChart(sdmActiveKey);
+  });
+});
+
+let mapInitialized = false, leafletMap = null, tileLayer = null;
+function initMap(){
+  if(mapInitialized) return;
+  mapInitialized = true;
+  leafletMap = L.map('mapPemancar', {scrollWheelZoom:false}).setView([-3.35, 103.9], 7.3);
+  setMapTheme();
+  towers.forEach(t=>{
+    const color = t.status==='Aktif' ? cssVar('--cyan') : cssVar('--coral');
+    const icon = L.divIcon({ className:'', html:`<div class="tower-pin" style="background:${color};"></div>`, iconSize:[16,16], iconAnchor:[8,8] });
+    const pct = Math.round((t.power/t.cap)*100);
+    const popupHtml = `
+      <div class="popup-title">${t.name}</div>
+      <div class="popup-loc">${t.loc}</div>
+      <div class="popup-row"><span>Status</span><span>${t.status}</span></div>
+      <div class="popup-row"><span>Daya Pancar</span><span>${t.power} W</span></div>
+      <div class="popup-row"><span>Kapasitas Maks</span><span>${t.cap} W</span></div>
+      <div class="popup-row"><span>Beban</span><span>${pct}%</span></div>
+      <div class="popup-row"><span>Kanal</span><span>${t.freq}</span></div>
+      <div class="popup-row"><span>Jam Operasi</span><span>${t.uptime} jam/hari</span></div>`;
+    L.marker([t.lat, t.lng], {icon}).addTo(leafletMap).bindPopup(popupHtml);
+  });
+  setTimeout(()=>leafletMap.invalidateSize(), 200);
+}
+function setMapTheme(){
+  if(tileLayer) leafletMap.removeLayer(tileLayer);
+  const isLight = root.classList.contains('light');
+  const url = isLight
+    ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  tileLayer = L.tileLayer(url, { attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:18 }).addTo(leafletMap);
+}
+
+function buildCharts(){
+  const CYAN = cssVar('--cyan'), VIOLET = cssVar('--violet'),
+        AMBER = cssVar('--amber'), CORAL = cssVar('--coral'), MINT = cssVar('--mint'),
+        TXTDIM = cssVar('--text-dim'), GRID = cssVar('--grid');
+  Chart.defaults.color = TXTDIM;
+
+  renderFollowersChart(followersActiveKey);
+  renderSDMChart(sdmActiveKey);
+
+  mkChart('chartAudienceShare', { type:'doughnut',
+    data:{labels:['Instagram','Facebook','YouTube','TikTok','X'],
+      datasets:[{data:[62.4,48.1,29.8,57.4,7.9], backgroundColor:['#DD2A7B','#1877F2','#FF0000','#25F4EE','#8892A0'], borderWidth:0}]},
+    options:{plugins:{legend:{position:'bottom', labels:{boxWidth:10, padding:14, color:TXTDIM}}}, cutout:'60%'}
+  });
+  mkChart('chartEngagement', { type:'bar',
+    data:{labels:['Minggu 1','Minggu 2','Minggu 3','Minggu 4'],
+      datasets:[
+        {label:'Instagram', data:[4.2,4.6,3.9,5.1], backgroundColor:'#DD2A7B'},
+        {label:'TikTok', data:[6.1,6.8,7.2,7.9], backgroundColor:'#25F4EE'},
+        {label:'Facebook', data:[2.1,2.4,2.0,2.6], backgroundColor:'#1877F2'},
+        {label:'YouTube', data:[3.0,3.3,3.5,3.8], backgroundColor:'#FF3B3B'},
+      ]},
+    options:{plugins:{legend:{position:'bottom', labels:{boxWidth:10, color:TXTDIM}}}, scales:{y:{grid:{color:GRID}, ticks:{color:TXTDIM}, title:{display:true,text:'% Engagement', color:TXTDIM}}, x:{grid:{display:false}, ticks:{color:TXTDIM}}}}
+  });
+  mkChart('chartJabatan', { type:'bar',
+    data:{labels:['Struktural','Teknisi','Jurnalis/Produser','Administrasi','Kameramen/Editor'],
+      datasets:[{data:[14,28,22,31,31], backgroundColor:VIOLET, borderRadius:8}]},
+    options:{indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{grid:{color:GRID}, ticks:{color:TXTDIM}}, y:{grid:{display:false}, ticks:{color:TXTDIM}}}}
+  });
+  mkChart('chartUsia', { type:'bar',
+    data:{labels:['25-34','35-44','45-54','55-60'], datasets:[{data:[22,38,41,25], backgroundColor:[CYAN,VIOLET,AMBER,CORAL], borderRadius:8}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{grid:{color:GRID}, ticks:{color:TXTDIM}}, x:{grid:{display:false}, ticks:{color:TXTDIM}}}}
+  });
+  mkChart('chartSKP', { type:'radar',
+    data:{labels:['Program & Berita','Teknisi/Transmisi','Administrasi','Keuangan','Umum & SDM'],
+      datasets:[{label:'Nilai SKP Rata-rata', data:[86,81,79,84,77], borderColor:CYAN, backgroundColor:CYAN+'2E', pointBackgroundColor:CYAN}]},
+    options:{plugins:{legend:{display:false}}, scales:{r:{min:60,max:100, grid:{color:GRID}, angleLines:{color:GRID}, pointLabels:{color:TXTDIM}, ticks:{color:TXTDIM, backdropColor:'transparent'}}}}
+  });
+  mkChart('chartKehadiran', { type:'line',
+    data:{labels:['Feb','Mar','Apr','Mei','Jun','Jul'],
+      datasets:[{label:'Kehadiran (%)', data:[96.2,95.8,97.1,96.5,95.9,97.3], borderColor:MINT, backgroundColor:(c)=>grad(c.chart.ctx,MINT), fill:true, tension:.35, pointRadius:3, pointBackgroundColor:MINT}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{min:90,max:100, grid:{color:GRID}, ticks:{color:TXTDIM}}, x:{grid:{display:false}, ticks:{color:TXTDIM}}}}
+  });
+  mkChart('chartPower', { type:'bar',
+    data:{labels:towers.map(t=>t.name.replace('Pemancar ','')),
+      datasets:[{label:'Daya Aktual (W)', data:towers.map(t=>t.power), backgroundColor:CYAN, borderRadius:8},
+                {label:'Kapasitas Maks (W)', data:towers.map(t=>t.cap), backgroundColor:TXTDIM+'40', borderRadius:8}]},
+    options:{plugins:{legend:{position:'bottom', labels:{boxWidth:10, color:TXTDIM}}}, scales:{y:{grid:{color:GRID}, ticks:{color:TXTDIM}}, x:{grid:{display:false}, ticks:{color:TXTDIM}}}}
+  });
+  mkChart('chartUptime', { type:'bar',
+    data:{labels:towers.map(t=>t.name.replace('Pemancar ','')),
+      datasets:[{data:towers.map(t=>t.uptime), backgroundColor:towers.map(t=>t.uptime===0?CORAL:AMBER), borderRadius:8}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{grid:{color:GRID}, ticks:{color:TXTDIM}, title:{display:true,text:'Jam/Hari', color:TXTDIM}}, x:{grid:{display:false}, ticks:{color:TXTDIM}}}}
+  });
+}
+function rebuildAllCharts(){ destroyAllCharts(); buildCharts(); }
+buildCharts();
+loadSdmData();
+loadUmumData();
+</script>
+</body>
+</html>

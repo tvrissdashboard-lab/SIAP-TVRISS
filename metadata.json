@@ -1,0 +1,6 @@
+{
+  "name": "SIAP - Sistem Informasi Administrasi Pelatihan",
+  "description": "Aplikasi Resmi Administrasi Pelatihan Pegawai TVRI Stasiun Sumatera Selatan. Belajar. Berkembang. Berprestasi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

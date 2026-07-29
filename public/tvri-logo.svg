@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" width="100%" height="100%">
+  <!-- TVRI Sumatera Selatan Official Logo Vector -->
+  <g transform="translate(30, 20)">
+    <!-- TV Letters in Navy Blue -->
+    <!-- T -->
+    <path d="M 15 65 H 75 V 82 H 52 V 155 H 38 V 82 H 15 Z" fill="#1C3168" />
+    <!-- V -->
+    <path d="M 75 65 L 98 155 H 118 L 140 65 H 120 L 108 126 L 95 65 Z" fill="#1C3168" />
+
+    <!-- Blue Circle for RI -->
+    <circle cx="205" cy="110" r="58" fill="#1C3168" />
+
+    <!-- R inside Circle (White) -->
+    <path d="M 175 76 H 204 C 217 76 226 83 226 94 C 226 102 220 108 211 111 L 228 144 H 210 L 195 115 H 191 V 144 H 175 Z M 191 101 H 203 C 208 101 211 99 211 95 C 211 91 208 89 203 89 H 191 Z" fill="#FFFFFF" />
+
+    <!-- I inside Circle (White) -->
+    <path d="M 233 76 H 248 V 144 H 233 Z" fill="#FFFFFF" />
+
+    <!-- Text: Sumatera Selatan -->
+    <text
+      x="170"
+      y="225"
+      text-anchor="middle"
+      fill="#1C3168"
+      font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      font-weight="800"
+      font-size="34"
+      letter-spacing="-0.5"
+    >Sumatera Selatan</text>
+  </g>
+</svg>
