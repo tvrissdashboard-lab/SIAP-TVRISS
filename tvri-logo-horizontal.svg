@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 90" width="100%" height="100%">
+  <!-- TVRI Sumatera Selatan Horizontal Logo Vector -->
+  <g transform="translate(10, 5)">
+    <!-- T -->
+    <path d="M 5 15 H 45 V 27 H 30 V 75 H 18 V 27 H 5 Z" fill="#1C3168" />
+    <!-- V -->
+    <path d="M 45 15 L 61 75 H 75 L 90 15 H 76 L 68 55 L 60 15 Z" fill="#1C3168" />
+
+    <!-- Blue Circle for RI -->
+    <circle cx="132" cy="45" r="36" fill="#1C3168" />
+
+    <!-- R inside Circle (White) -->
+    <path d="M 112 24 H 130 C 138 24 144 28 144 35 C 144 40 140 44 135 46 L 145 66 H 134 L 125 48 H 122 V 66 H 112 Z M 122 39 H 130 C 133 39 135 38 135 35 C 135 32 133 31 130 31 H 122 Z" fill="#FFFFFF" />
+
+    <!-- I inside Circle (White) -->
+    <path d="M 149 24 H 159 V 66 H 149 Z" fill="#FFFFFF" />
+
+    <!-- Divider line -->
+    <line x1="182" y1="18" x2="182" y2="72" stroke="#CBD5E1" stroke-width="2.5" />
+
+    <!-- Text: Sumatera Selatan -->
+    <text
+      x="196"
+      y="43"
+      fill="#1C3168"
+      font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      font-weight="800"
+      font-size="20"
+      letter-spacing="-0.2"
+    >Sumatera</text>
+    <text
+      x="196"
+      y="65"
+      fill="#1C3168"
+      font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      font-weight="800"
+      font-size="20"
+      letter-spacing="-0.2"
+    >Selatan</text>
+  </g>
+</svg>
