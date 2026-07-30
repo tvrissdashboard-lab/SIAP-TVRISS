@@ -50,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center space-x-3.5">
             {/* TVRI Sumsel Official Vector Logo */}
             <div className="hover:scale-[1.03] transition duration-200 cursor-pointer">
-              <TvriSumselLogo className="h-11 sm:h-12" badge={true} />
+              <TvriSumselLogo className="h-[66px] sm:h-[72px]" badge={true} />
             </div>
 
             {/* Title & Subtitle */}

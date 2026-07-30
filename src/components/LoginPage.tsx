@@ -255,7 +255,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-slate-800 backdrop-blur-xl">
           <div className="text-center space-y-2">
             <div className="flex justify-center">
-              <TvriSumselLogo className="h-14" badge={true} />
+              <TvriSumselLogo className="h-[95px]" badge={true} />
             </div>
             <div className="pt-2">
               <h1 className="text-3xl font-black text-blue-950 tracking-wider">
