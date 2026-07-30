@@ -816,5 +816,45 @@ export const Storage = {
   async getActiveKepalaStasiunAccess(): Promise<KepalaStasiunAccessRecord | null> {
     const records = await this.getKepalaStasiunAccessRecords();
     return records.find(r => r.status === 'AKTIF') || null;
+  },
+
+  async grantKepalaStasiunAccess(emp: Pegawai, adminName: string): Promise<{ success: boolean; message: string }> {
+    const payload = {
+      id: `KEPSTA_${Date.now()}`,
+      employee_id: emp.id,
+      employee_nama: emp.nama,
+      employee_nip: emp.nip,
+      employee_jabatan: emp.jabatan || '',
+      status: 'AKTIF',
+      granted_at: new Date().toISOString(),
+      granted_by: adminName
+    };
+
+    const { error } = await supabase.from('kepala_stasiun_access').insert([payload]);
+
+    if (error) {
+      console.error('[SUPABASE ERROR] Error granting kepsta access:', error);
+      return { success: false, message: 'Gagal memberikan hak akses Kepala Stasiun. Silakan coba lagi.' };
+    }
+
+    return { success: true, message: `Hak akses Kepala Stasiun berhasil diberikan kepada ${emp.nama}.` };
+  },
+
+  async revokeKepalaStasiunAccess(adminName: string): Promise<{ success: boolean; message: string }> {
+    const { error } = await supabase
+      .from('kepala_stasiun_access')
+      .update({
+        status: 'TIDAK_AKTIF',
+        revoked_at: new Date().toISOString(),
+        revoked_by: adminName
+      })
+      .eq('status', 'AKTIF');
+
+    if (error) {
+      console.error('[SUPABASE ERROR] Error revoking kepsta access:', error);
+      return { success: false, message: 'Gagal mencabut hak akses Kepala Stasiun. Silakan coba lagi.' };
+    }
+
+    return { success: true, message: 'Hak akses Kepala Stasiun berhasil dicabut.' };
   }
 };

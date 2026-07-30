@@ -32,7 +32,7 @@ export const KepalaStasiunAccessManagementView: React.FC<KepalaStasiunAccessMana
   // Active employees list
   const activePegawaiList = pegawaiList.filter(p => p.aktif !== false);
 
-  const handleGrantAccess = (e: React.FormEvent) => {
+  const handleGrantAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployeeId) return;
 
@@ -46,7 +46,7 @@ export const KepalaStasiunAccessManagementView: React.FC<KepalaStasiunAccessMana
     }
 
     const adminName = currentUser?.username === 'admin' ? 'Admin SDM System' : (currentPegawai?.nama || 'Admin SDM');
-    const res = Storage.grantKepalaStasiunAccess(selectedEmp, adminName);
+    const res = await Storage.grantKepalaStasiunAccess(selectedEmp, adminName);
 
     if (res.success) {
       onRefreshData();
@@ -62,9 +62,9 @@ export const KepalaStasiunAccessManagementView: React.FC<KepalaStasiunAccessMana
     }
   };
 
-  const handleRevokeAccess = () => {
+  const handleRevokeAccess = async () => {
     const adminName = currentUser?.username === 'admin' ? 'Admin SDM System' : (currentPegawai?.nama || 'Admin SDM');
-    const res = Storage.revokeKepalaStasiunAccess(adminName);
+    const res = await Storage.revokeKepalaStasiunAccess(adminName);
 
     if (res.success) {
       onRefreshData();
@@ -80,17 +80,17 @@ export const KepalaStasiunAccessManagementView: React.FC<KepalaStasiunAccessMana
     }
   };
 
-  const handleConfirmRevokeAndGrant = () => {
+  const handleConfirmRevokeAndGrant = async () => {
     const selectedEmp = pegawaiList.find(p => p.id === selectedEmployeeId);
     if (!selectedEmp) return;
 
     const adminName = currentUser?.username === 'admin' ? 'Admin SDM System' : (currentPegawai?.nama || 'Admin SDM');
 
     // 1. Revoke active
-    Storage.revokeKepalaStasiunAccess(adminName);
+    await Storage.revokeKepalaStasiunAccess(adminName);
 
     // 2. Grant to new
-    const res = Storage.grantKepalaStasiunAccess(selectedEmp, adminName);
+    const res = await Storage.grantKepalaStasiunAccess(selectedEmp, adminName);
 
     if (res.success) {
       onRefreshData();
