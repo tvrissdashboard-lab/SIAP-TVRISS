@@ -377,6 +377,24 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                     <p className="text-slate-700 italic text-[11px]">{selectedSub.keterangan}</p>
                   </div>
                 )}
+
+                {selectedSub.lampiranNama && (
+                  <div className="col-span-2 pt-2 border-t border-slate-200">
+                    <span className="text-slate-500 block text-[11px] font-medium">Dokumen Lampiran / Surat Undangan:</span>
+                    {selectedSub.lampiranUrl ? (
+                      <a
+                        href={selectedSub.lampiranUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 mt-1 text-blue-700 font-bold text-[11px] underline hover:text-blue-900"
+                      >
+                        {selectedSub.lampiranNama} (Lihat/Unduh Berkas)
+                      </a>
+                    ) : (
+                      <span className="block text-[11px] text-slate-400 italic mt-1">{selectedSub.lampiranNama} (berkas tidak tersedia untuk pengajuan lama)</span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Approval status banner */}

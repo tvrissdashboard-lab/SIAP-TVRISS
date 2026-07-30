@@ -277,6 +277,37 @@ export const Storage = {
     return { url: publicUrlData.publicUrl, error: null };
   },
 
+  async uploadLampiranFile(file: File, employeeId: string): Promise<{ url: string | null; error: string | null }> {
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'pdf';
+    const safeFileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${fileExt}`;
+    const filePath = `${employeeId}/${safeFileName}`;
+
+    const { error: uploadError } = await supabase
+      .storage
+      .from('lampiran-pengajuan')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type || undefined
+      });
+
+    if (uploadError) {
+      console.error('[SUPABASE ERROR] Error uploading lampiran file:', uploadError);
+      return { url: null, error: uploadError.message || 'Gagal mengunggah lampiran ke server.' };
+    }
+
+    const { data: publicUrlData } = supabase
+      .storage
+      .from('lampiran-pengajuan')
+      .getPublicUrl(filePath);
+
+    if (!publicUrlData?.publicUrl) {
+      return { url: null, error: 'Lampiran terunggah tetapi URL publik tidak ditemukan.' };
+    }
+
+    return { url: publicUrlData.publicUrl, error: null };
+  },
+
   // --------------------------------------------------------------------------
   // 1. PEGAWAI
   // --------------------------------------------------------------------------
@@ -572,6 +603,7 @@ export const Storage = {
       keterangan: row.keterangan,
       status: row.status as SubmissionStatus,
       lampiranNama: row.lampiran_nama,
+      lampiranUrl: row.lampiran_url,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
@@ -597,6 +629,7 @@ export const Storage = {
       keterangan: submission.keterangan,
       status: submission.status,
       lampiran_nama: submission.lampiranNama,
+      lampiran_url: submission.lampiranUrl,
       updated_at: new Date().toISOString()
     };
 

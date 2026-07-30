@@ -192,7 +192,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
   const startIndex = (validCurrentPage - 1) * pageSize;
   const paginatedSubmissions = filteredSubmissions.slice(startIndex, startIndex + pageSize);
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.judulPelatihan || !formData.penyelenggara || !formData.lokasi) {
       if (onShowSuccess) {
@@ -209,6 +209,19 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
     const selectedEmp = (isAdmin || isKepsta)
       ? (pegawaiList.find(p => p.id === formData.employeeId) || currentPegawai)
       : currentPegawai;
+
+    let lampiranUrl: string | undefined = undefined;
+    let lampiranNamaFinal = formData.lampiranNama || 'Berkas_Pengajuan_TVRI.pdf';
+
+    if (attachedFile) {
+      const uploadResult = await Storage.uploadLampiranFile(attachedFile, selectedEmp?.id || 'UNKNOWN');
+      if (uploadResult.error || !uploadResult.url) {
+        setAttachedFileError(uploadResult.error || 'Gagal mengunggah lampiran. Silakan coba lagi.');
+        return;
+      }
+      lampiranUrl = uploadResult.url;
+      lampiranNamaFinal = attachedFile.name;
+    }
 
     const newSubNumber = generateSubmissionNumber(submissions);
 
@@ -230,7 +243,8 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       lokasi: formData.lokasi,
       keterangan: formData.keterangan,
       status: 'DRAFT',
-      lampiranNama: formData.lampiranNama || 'Berkas_Pengajuan_TVRI.pdf',
+      lampiranNama: lampiranNamaFinal,
+      lampiranUrl: lampiranUrl,
       createdAt: new Date().toISOString()
     };
 
