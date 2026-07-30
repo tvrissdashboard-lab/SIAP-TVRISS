@@ -34,6 +34,12 @@ export const SertifikatPegawaiView: React.FC<SertifikatPegawaiViewProps> = ({
 
   // Download certificate helper
   const handleDownloadCertificate = (cert: SertifikatPelatihan) => {
+    // Jika file asli sudah tersimpan di Supabase Storage, buka/unduh file aslinya
+    if (cert.fileUrl && !cert.fileUrl.startsWith('blob:')) {
+      window.open(cert.fileUrl, '_blank');
+      return;
+    }
+
     const content = `=====================================================
 LPP TVRI STASIUN SUMATERA SELATAN
 SISTEM INFORMASI ADMINISTRASI PELATIHAN (SIAP)
@@ -57,7 +63,7 @@ Dokumen ini merupakan arsip sertifikat digital terverifikasi dalam portal SIAP T
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = cert.fileUrl && cert.fileUrl.startsWith('blob:') ? cert.fileUrl : url;
+    a.href = url;
     a.download = cert.fileNama || `Sertifikat_${cert.judulPelatihan.replace(/\s+/g, '_')}.txt`;
     document.body.appendChild(a);
     a.click();
@@ -554,7 +560,7 @@ TVRI Stasiun Sumatera Selatan dan dapat dipergunakan untuk verifikasi administra
         const userCerts = pegawaiCertificatesMap.get(selectedPegawai.id) || pegawaiCertificatesMap.get(selectedPegawai.nip) || [];
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
             <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 my-8 border border-slate-200">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center space-x-2 text-blue-900">
@@ -714,7 +720,7 @@ TVRI Stasiun Sumatera Selatan dan dapat dipergunakan untuk verifikasi administra
 
       {/* Reject / Revision Modal */}
       {rejectionModalCert && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[60] flex items-start justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 my-8 border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-extrabold text-slate-900 text-sm flex items-center space-x-2">
@@ -795,7 +801,7 @@ TVRI Stasiun Sumatera Selatan dan dapat dipergunakan untuk verifikasi administra
 
       {/* Document Preview Modal */}
       {previewCert && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[60] flex items-start justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8 border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>

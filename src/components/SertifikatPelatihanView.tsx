@@ -126,7 +126,7 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
     setFileError('');
   };
 
-  const handleSubmitUpload = (e: React.FormEvent) => {
+  const handleSubmitUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUploadItem) return;
 
@@ -137,53 +137,66 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const fileExt = selectedFile ? selectedFile.name.split('.').pop()?.toLowerCase() : (selectedUploadItem.fileType || 'pdf');
-      const fileSizeMb = selectedFile ? parseFloat((selectedFile.size / (1024 * 1024)).toFixed(2)) : (selectedUploadItem.fileSizeMb || 1.2);
-      
-      const updatedCert: SertifikatPelatihan = {
-        ...selectedUploadItem,
-        id: selectedUploadItem.id.startsWith('SERT-SUB') ? `SERT${String(Date.now()).slice(-5)}` : selectedUploadItem.id,
-        employeeId: currentPegawai.id,
-        employeeNama: currentPegawai.nama,
-        employeeNip: currentPegawai.nip,
-        employeeUnitKerja: currentPegawai.unitKerja,
-        employeeJabatan: currentPegawai.jabatan,
-        nomorSertifikat: nomorSertifikat.trim() || `SERT/${new Date().getFullYear()}/TVRI/${Math.floor(1000 + Math.random() * 9000)}`,
-        tanggalSertifikat: tanggalSertifikat || new Date().toISOString().split('T')[0],
-        fileNama: selectedFile ? selectedFile.name : (selectedUploadItem.fileNama || 'Sertifikat_Pelatihan.pdf'),
-        fileUrl: selectedFile ? URL.createObjectURL(selectedFile) : selectedUploadItem.fileUrl,
-        fileType: fileExt,
-        fileSizeMb: fileSizeMb,
-        status: 'SEDANG_DIVERIFIKASI',
-        uploadedAt: new Date().toISOString(),
-        catatanRevisi: undefined
-      };
+    let finalFileUrl = selectedUploadItem.fileUrl;
+    let fileExt = selectedUploadItem.fileType || 'pdf';
+    let fileSizeMb = selectedUploadItem.fileSizeMb || 1.2;
+    let fileNama = selectedUploadItem.fileNama || 'Sertifikat_Pelatihan.pdf';
 
-      Storage.saveCertificate(updatedCert);
+    if (selectedFile) {
+      const uploadResult = await Storage.uploadCertificateFile(selectedFile, currentPegawai.id);
+      if (uploadResult.error || !uploadResult.url) {
+        setFileError(uploadResult.error || 'Gagal mengunggah file. Silakan coba lagi.');
+        setIsSubmitting(false);
+        return;
+      }
+      finalFileUrl = uploadResult.url;
+      fileExt = selectedFile.name.split('.').pop()?.toLowerCase() || 'pdf';
+      fileSizeMb = parseFloat((selectedFile.size / (1024 * 1024)).toFixed(2));
+      fileNama = selectedFile.name;
+    }
 
-      Storage.addAuditLog({
-        userId: currentPegawai.nip,
-        userName: currentPegawai.nama,
-        action: 'UPLOAD_CERTIFICATE',
-        module: 'SERTIFIKAT',
-        description: `Mengunggah sertifikat pelatihan "${updatedCert.judulPelatihan}" (Nomor: ${updatedCert.nomorSertifikat}).`,
-        status: 'SUCCESS'
-      });
+    const updatedCert: SertifikatPelatihan = {
+      ...selectedUploadItem,
+      id: selectedUploadItem.id.startsWith('SERT-SUB') ? `SERT${String(Date.now()).slice(-5)}` : selectedUploadItem.id,
+      employeeId: currentPegawai.id,
+      employeeNama: currentPegawai.nama,
+      employeeNip: currentPegawai.nip,
+      employeeUnitKerja: currentPegawai.unitKerja,
+      employeeJabatan: currentPegawai.jabatan,
+      nomorSertifikat: nomorSertifikat.trim() || `SERT/${new Date().getFullYear()}/TVRI/${Math.floor(1000 + Math.random() * 9000)}`,
+      tanggalSertifikat: tanggalSertifikat || new Date().toISOString().split('T')[0],
+      fileNama: fileNama,
+      fileUrl: finalFileUrl,
+      fileType: fileExt,
+      fileSizeMb: fileSizeMb,
+      status: 'SEDANG_DIVERIFIKASI',
+      uploadedAt: new Date().toISOString(),
+      catatanRevisi: undefined
+    };
 
-      setIsSubmitting(false);
-      setSelectedUploadItem(null);
-      onRefreshData();
+    await Storage.saveCertificate(updatedCert);
 
-      // Play audio notification chime as required
-      playNotificationSound();
+    await Storage.addAuditLog({
+      userId: currentPegawai.nip,
+      userName: currentPegawai.nama,
+      action: 'UPLOAD_CERTIFICATE',
+      module: 'SERTIFIKAT',
+      description: `Mengunggah sertifikat pelatihan "${updatedCert.judulPelatihan}" (Nomor: ${updatedCert.nomorSertifikat}).`,
+      status: 'SUCCESS'
+    });
 
-      // Show toast notification
-      onShowSuccess(
-        '✓ Sertifikat berhasil diunggah.',
-        'Sertifikat Anda telah tersimpan dan sedang menunggu proses verifikasi oleh Admin SDM.'
-      );
-    }, 400);
+    setIsSubmitting(false);
+    setSelectedUploadItem(null);
+    onRefreshData();
+
+    // Play audio notification chime as required
+    playNotificationSound();
+
+    // Show toast notification
+    onShowSuccess(
+      '✓ Sertifikat berhasil diunggah.',
+      'Sertifikat Anda telah tersimpan dan sedang menunggu proses verifikasi oleh Admin SDM.'
+    );
   };
 
   // Portfolio PDF Download Handler
@@ -548,7 +561,7 @@ Sasaran Kinerja Pegawai (SKP), kenaikan pangkat, atau administrasi SDM.
 
       {/* SECTION 3 - UPLOAD SERTIFIKAT MODAL */}
       {selectedUploadItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 my-8 border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2 text-blue-900">
@@ -678,7 +691,7 @@ Sasaran Kinerja Pegawai (SKP), kenaikan pangkat, atau administrasi SDM.
 
       {/* SECTION 5 & 6 - PORTOFOLIO PELATIHAN (PDF REPORT) MODAL */}
       {isPortfolioModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl space-y-5 my-8 border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2.5">
@@ -802,7 +815,7 @@ Sasaran Kinerja Pegawai (SKP), kenaikan pangkat, atau administrasi SDM.
 
       {/* Document Preview Modal */}
       {previewCert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8 border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>

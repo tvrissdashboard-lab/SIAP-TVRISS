@@ -244,6 +244,40 @@ export const Storage = {
   },
 
   // --------------------------------------------------------------------------
+  // 0. FILE UPLOAD (Supabase Storage Bucket)
+  // --------------------------------------------------------------------------
+  async uploadCertificateFile(file: File, employeeId: string): Promise<{ url: string | null; error: string | null }> {
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'pdf';
+    const safeFileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${fileExt}`;
+    const filePath = `${employeeId}/${safeFileName}`;
+
+    const { error: uploadError } = await supabase
+      .storage
+      .from('sertifikat-pelatihan')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type || undefined
+      });
+
+    if (uploadError) {
+      console.error('[SUPABASE ERROR] Error uploading certificate file:', uploadError);
+      return { url: null, error: uploadError.message || 'Gagal mengunggah file ke server.' };
+    }
+
+    const { data: publicUrlData } = supabase
+      .storage
+      .from('sertifikat-pelatihan')
+      .getPublicUrl(filePath);
+
+    if (!publicUrlData?.publicUrl) {
+      return { url: null, error: 'File terunggah tetapi URL publik tidak ditemukan.' };
+    }
+
+    return { url: publicUrlData.publicUrl, error: null };
+  },
+
+  // --------------------------------------------------------------------------
   // 1. PEGAWAI
   // --------------------------------------------------------------------------
   async getPegawai(): Promise<Pegawai[]> {

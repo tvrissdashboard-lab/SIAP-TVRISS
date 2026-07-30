@@ -561,7 +561,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
 
       {/* Modal Form Submission */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8 text-slate-800">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
