@@ -11,7 +11,7 @@ export const TvriSumselLogo: React.FC<TvriSumselLogoProps> = ({
   badge = true,
   variant = 'stacked'
 }) => {
-  const logoSrc = variant === 'horizontal' ? '/tvri-logo-horizontal.svg' : '/tvri-logo.svg';
+  const logoSrc = import.meta.env.BASE_URL + 'logo-tvri-sumsel.png';
 
   return (
     <div className={`inline-flex items-center justify-center shrink-0 ${badge ? 'bg-white px-3 py-1.5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition' : ''} ${className}`}>
