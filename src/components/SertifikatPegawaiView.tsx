@@ -86,7 +86,7 @@ Status Kepegawaian : ${pegawai.statusPegawai || 'PNS / PPPK / Pegawai Tetap'}
 
 II. RINGKASAN PORTOFOLIO
 --------------------------------------------------------------------------------
-Total Pelatihan Diikuti : ${Math.max(userCerts.length, 1)} Program
+Total Pelatihan Diikuti : ${userCerts.length} Program
 Total Sertifikat Disetujui : ${userCerts.filter(c => c.status === 'DISETUJUI').length} Sertifikat
 Tanggal Cetak Dokumen   : ${todayStr}
 
@@ -483,7 +483,7 @@ TVRI Stasiun Sumatera Selatan dan dapat dipergunakan untuk verifikasi administra
             <div className="divide-y divide-slate-100">
               {paginatedPegawaiList.map((pegawai) => {
                 const userCerts = pegawaiCertificatesMap.get(pegawai.id) || pegawaiCertificatesMap.get(pegawai.nip) || [];
-                const totalPelatihan = Math.max(userCerts.length, 1);
+                const totalPelatihan = userCerts.length;
                 const totalSertifikatUploaded = userCerts.filter(c => c.status === 'DISETUJUI' || c.status === 'SEDANG_DIVERIFIKASI').length;
                 const hasPending = userCerts.some(c => c.status === 'SEDANG_DIVERIFIKASI');
 
