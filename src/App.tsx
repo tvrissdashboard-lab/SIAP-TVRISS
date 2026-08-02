@@ -213,7 +213,7 @@ function MainAppContent() {
       setCurrentUser(targetUser);
       setCurrentPegawai(targetPegawai);
 
-      Storage.addAuditLog({
+      await Storage.addAuditLog({
         userId: targetUser.id,
         userName: targetPegawai?.nama || (targetRole === 'ADMIN_SDM' ? 'Admin SDM' : targetUser.username),
         action: 'SWITCH_ROLE',
@@ -221,13 +221,13 @@ function MainAppContent() {
         description: `Beralih peran penguji menjadi ${targetRole}`,
         status: 'SUCCESS'
       });
-      loadData();
+      await loadData();
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (currentUser) {
-      Storage.addAuditLog({
+      await Storage.addAuditLog({
         userId: currentUser.id,
         userName: currentPegawai?.nama || (currentUser.role === 'ADMIN_SDM' ? 'Admin SDM' : currentUser.username),
         action: 'LOGOUT',
@@ -243,14 +243,14 @@ function MainAppContent() {
     loadData();
   };
 
-  const handleLoginSuccess = (user: UserAccount, pegawai: Pegawai | null, rememberMe: boolean = true) => {
+  const handleLoginSuccess = async (user: UserAccount, pegawai: Pegawai | null, rememberMe: boolean = true) => {
     SessionManager.saveSession(user.id, rememberMe);
     setCurrentUser(user);
     setCurrentPegawai(pegawai);
     setSessionTimeoutMessage(null);
     setActiveTab('dashboard');
 
-    Storage.addAuditLog({
+    await Storage.addAuditLog({
       userId: user.id,
       userName: pegawai?.nama || (user.role === 'ADMIN_SDM' ? 'Admin SDM' : user.username),
       action: 'LOGIN',
@@ -258,7 +258,7 @@ function MainAppContent() {
       description: 'Pengguna berhasil masuk ke dalam portal SIAP SUMSEL',
       status: 'SUCCESS'
     });
-    loadData();
+    await loadData();
 
     triggerSuccessNotification({
       title: 'Selamat datang di SIAP',
@@ -268,7 +268,7 @@ function MainAppContent() {
     });
   };
 
-  const handleChangePasswordSubmit = (userId: string, oldPass: string, newPass: string): boolean => {
+  const handleChangePasswordSubmit = async (userId: string, oldPass: string, newPass: string): Promise<boolean> => {
     if (!currentUser) return false;
 
     if (currentUser.passwordHash !== hashPassword(oldPass) && oldPass !== '1234' && oldPass !== 'admin') {
@@ -281,8 +281,8 @@ function MainAppContent() {
       isFirstLogin: false
     };
 
-    Storage.saveUser(updatedUser);
-    Storage.addAuditLog({
+    await Storage.saveUser(updatedUser);
+    await Storage.addAuditLog({
       userId: currentUser.id,
       userName: currentPegawai?.nama || currentUser.username,
       action: 'CHANGE_PASSWORD',
@@ -290,14 +290,14 @@ function MainAppContent() {
       description: 'Pengguna berhasil memperbarui password akun',
       status: 'SUCCESS'
     });
-    loadData();
+    await loadData();
 
     return true;
   };
 
-  const handleSavePegawai = (pegawai: Pegawai) => {
-    Storage.savePegawai(pegawai);
-    Storage.addAuditLog({
+  const handleSavePegawai = async (pegawai: Pegawai) => {
+    await Storage.savePegawai(pegawai);
+    await Storage.addAuditLog({
       userId: currentUser?.id || '',
       userName: currentPegawai?.nama || 'Admin',
       action: 'SAVE_PEGAWAI',
@@ -305,13 +305,13 @@ function MainAppContent() {
       description: `Menyimpan data pegawai ${pegawai.nama} (NIP: ${pegawai.nip})`,
       status: 'SUCCESS'
     });
-    loadData();
+    await loadData();
   };
 
-  const handleDeletePegawai = (id: string) => {
+  const handleDeletePegawai = async (id: string) => {
     const targetEmp = pegawaiList.find(p => p.id === id);
-    Storage.softDeletePegawai(id);
-    Storage.addAuditLog({
+    await Storage.softDeletePegawai(id);
+    await Storage.addAuditLog({
       userId: currentUser?.id || '',
       userName: currentPegawai?.nama || 'Admin',
       action: 'DELETE_PEGAWAI',
@@ -319,10 +319,10 @@ function MainAppContent() {
       description: `Menghapus data pegawai ${targetEmp?.nama || id}`,
       status: 'SUCCESS'
     });
-    loadData();
+    await loadData();
   };
 
-  const handleResetPassword = (employeeId: string) => {
+  const handleResetPassword = async (employeeId: string) => {
     const userAcc = usersList.find(u => u.employeeId === employeeId);
     const emp = pegawaiList.find(p => p.id === employeeId);
     if (userAcc && emp) {
@@ -332,8 +332,8 @@ function MainAppContent() {
         passwordHash: hashPassword(defaultPass),
         isFirstLogin: true
       };
-      Storage.saveUser(updatedUser);
-      Storage.addAuditLog({
+      await Storage.saveUser(updatedUser);
+      await Storage.addAuditLog({
         userId: currentUser?.id || '',
         userName: currentPegawai?.nama || 'Admin',
         action: 'RESET_PASSWORD',
@@ -341,13 +341,13 @@ function MainAppContent() {
         description: `Mereset password pegawai ${emp.nama} ke default`,
         status: 'SUCCESS'
       });
-      loadData();
+      await loadData();
     }
   };
 
-  const handleSaveSubmission = (submission: PengajuanPelatihan) => {
-    Storage.saveSubmission(submission);
-    Storage.addAuditLog({
+  const handleSaveSubmission = async (submission: PengajuanPelatihan) => {
+    await Storage.saveSubmission(submission);
+    await Storage.addAuditLog({
       userId: currentUser?.id || '',
       userName: currentPegawai?.nama || 'Pegawai',
       action: 'SAVE_SUBMISSION',
@@ -355,12 +355,12 @@ function MainAppContent() {
       description: `Membuat/memperbarui pengajuan ${submission.nomor}: ${submission.judulPelatihan}`,
       status: 'SUCCESS'
     });
-    loadData();
+    await loadData();
   };
 
-  const handleCancelSubmission = (id: string) => {
+  const handleCancelSubmission = async (id: string) => {
     const sub = submissions.find(s => s.id === id);
-    Storage.updateSubmissionStatus(id, 'CANCELLED');
+    await Storage.updateSubmissionStatus(id, 'CANCELLED');
     
     // Create Approval History record for cancellation tracking
     const historyItem: ApprovalHistoryItem = {
@@ -373,9 +373,9 @@ function MainAppContent() {
       note: 'Pengajuan dibatalkan oleh pemohon / pengguna.',
       createdAt: new Date().toISOString()
     };
-    Storage.addApprovalHistory(historyItem);
+    await Storage.addApprovalHistory(historyItem);
 
-    Storage.addAuditLog({
+    await Storage.addAuditLog({
       userId: currentUser?.id || '',
       userName: currentPegawai?.nama || 'Pegawai',
       action: 'CANCEL_SUBMISSION',
@@ -383,20 +383,20 @@ function MainAppContent() {
       description: `Membatalkan pengajuan ${sub?.nomor || id}`,
       status: 'SUCCESS'
     });
-    loadData();
+    await loadData();
   };
 
-  const handleUpdateSubmissionStatus = (
+  const handleUpdateSubmissionStatus = async (
     submissionId: string, 
     newStatus: SubmissionStatus
   ) => {
-    Storage.updateSubmissionStatus(submissionId, newStatus);
-    loadData();
+    await Storage.updateSubmissionStatus(submissionId, newStatus);
+    await loadData();
   };
 
-  const handleResetDemoData = () => {
-    Storage.resetAll();
-    loadData();
+  const handleResetDemoData = async () => {
+    await Storage.resetAll();
+    await loadData();
     triggerSuccessNotification({
       title: 'Demo Data Di-Reset',
       message: 'Seluruh data SIAP SUMSEL berhasil dikembalikan ke draf awal TVRI Sumatera Selatan.',
@@ -405,13 +405,13 @@ function MainAppContent() {
     });
   };
 
-  const handlePasswordChangeSuccess = (message: string) => {
+  const handlePasswordChangeSuccess = async (message: string) => {
     setIsChangePasswordModalOpen(false);
     SessionManager.clearSession();
     setCurrentUser(null);
     setCurrentPegawai(null);
     setPasswordChangeSuccessMessage('Silakan login kembali menggunakan password baru Anda.');
-    loadData();
+    await loadData();
   };
 
   // If User is NOT authenticated, display full-page Login Gateway

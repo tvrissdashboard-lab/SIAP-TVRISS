@@ -431,20 +431,23 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                 <div className="bg-amber-50/60 p-4 rounded-xl border border-amber-300 space-y-3">
                   <div className="flex items-center space-x-2 text-xs font-extrabold text-amber-950">
                     <MessageSquare className="w-4 h-4 text-amber-600" />
-                    <span>Catatan Tindakan & Keputusan</span>
+                    <span>Catatan Tindakan & Keputusan <span className="text-red-600">*</span></span>
                   </div>
 
                   <textarea
                     rows={3}
                     placeholder={
                       isKepsta 
-                        ? 'Masukkan catatan persetujuan / arahan Kepala Stasiun TVRI Sumatera Selatan...' 
-                        : 'Masukkan catatan verifikasi berkas SDM (kesesuaian dokumen, jadwal, dll)...'
+                        ? 'Contoh: Disetujui, jadwal dan anggaran sesuai. Silakan laksanakan pelatihan sesuai jadwal.' 
+                        : 'Contoh: Berkas lengkap dan sesuai, jadwal tidak bentrok. Diteruskan ke Kepala Stasiun untuk persetujuan.'
                     }
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    className="w-full bg-white border border-amber-200 rounded-xl p-2.5 text-xs text-slate-800 font-medium focus:border-amber-500 focus:outline-none shadow-sm"
+                    className="w-full bg-white border border-amber-200 rounded-xl p-2.5 text-xs text-slate-800 font-medium focus:border-amber-500 focus:outline-none shadow-sm placeholder:text-slate-400 placeholder:italic"
                   />
+                  <p className="text-[10px] text-amber-700 -mt-1.5">
+                    * Wajib diisi untuk {isKepsta ? 'Tolak Pengajuan (sebagai alasan penolakan)' : 'Verifikasi SDM'}. Untuk Disetujui Kepala Stasiun, boleh dikosongkan (otomatis terisi catatan standar).
+                  </p>
 
                   <div className="flex items-center justify-end space-x-2 pt-1">
                     {/* SDM Action */}
