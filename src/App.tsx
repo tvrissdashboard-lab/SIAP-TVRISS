@@ -203,7 +203,7 @@ function MainAppContent() {
   };
 
   // Handlers
-  const handleSwitchRole = (targetRole: Role) => {
+  const handleSwitchRole = async (targetRole: Role) => {
     const targetUser = usersList.find(u => u.role === targetRole) || usersList[0];
     const targetPegawai = targetUser?.employeeId
       ? pegawaiList.find(p => p.id === targetUser.employeeId) || null
