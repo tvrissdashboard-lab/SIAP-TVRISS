@@ -258,9 +258,9 @@ export const PegawaiView: React.FC<PegawaiViewProps> = ({
     }
   };
 
-  const handleResetPasswordClick = (p: Pegawai) => {
+  const handleResetPasswordClick = async (p: Pegawai) => {
     const defaultPass = generateDefaultPassword(p.tanggalLahir, p.nip);
-    const res = Storage.resetUserPasswordByAdmin(p.id, currentPegawai?.nama || 'Admin SDM');
+    const res = await Storage.resetUserPasswordByAdmin(p.id, currentPegawai?.nama || 'Admin SDM');
     onResetPassword(p.id);
     if (onShowSuccess) {
       onShowSuccess({

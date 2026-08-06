@@ -8,6 +8,7 @@ import {
 import { PengajuanPelatihan, Pegawai, UserAccount, SubmissionStatus, KepalaStasiunAccessRecord, checkHasKepalaStasiunPrivilege } from '../types';
 import { Storage, generateSubmissionNumber } from '../lib/storage';
 import { Pagination } from './Pagination';
+import { RekapPengajuanModal } from './RekapPengajuanModal';
 
 interface PengajuanViewProps {
   submissions: PengajuanPelatihan[];
@@ -54,6 +55,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isRekapModalOpen, setIsRekapModalOpen] = useState(false);
 
   React.useEffect(() => {
     if (autoOpenCreateModal) {
@@ -352,14 +354,25 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
           </p>
         </div>
 
-        <button
-          id="btn-open-create-modal"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-4 py-2.5 rounded-xl text-xs transition flex items-center space-x-2 shrink-0 shadow-md uppercase tracking-wider"
-        >
-          <Plus className="w-4 h-4 text-slate-950" />
-          <span>Buat Pengajuan Baru</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {(isAdmin || isKepsta) && (
+            <button
+              onClick={() => setIsRekapModalOpen(true)}
+              className="bg-white hover:bg-slate-50 text-slate-700 font-extrabold px-4 py-2.5 rounded-xl text-xs transition flex items-center space-x-2 shadow-sm border border-slate-200 uppercase tracking-wider"
+            >
+              <FileText className="w-4 h-4 text-blue-600" />
+              <span>Rekap Bulanan (PDF)</span>
+            </button>
+          )}
+          <button
+            id="btn-open-create-modal"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-4 py-2.5 rounded-xl text-xs transition flex items-center space-x-2 shrink-0 shadow-md uppercase tracking-wider"
+          >
+            <Plus className="w-4 h-4 text-slate-950" />
+            <span>Buat Pengajuan Baru</span>
+          </button>
+        </div>
       </div>
 
       {/* Sub-Tabs for Employee & Management Views */}
@@ -858,7 +871,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
             <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs mb-5 space-y-1">
               <div className="flex justify-between font-bold text-slate-900">
                 <span>{submissionToCancel.nomor}</span>
-                <span className="text-blue-700">{submissionToCancel.rumpunPelatihan}</span>
+                <span className="text-blue-700">{submissionToCancel.jenisPelatihan}</span>
               </div>
               <p className="font-semibold text-slate-800">{submissionToCancel.judulPelatihan}</p>
               <p className="text-[11px] text-slate-500">Penyelenggara: {submissionToCancel.penyelenggara}</p>
@@ -895,6 +908,14 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {isRekapModalOpen && (
+        <RekapPengajuanModal
+          pegawaiList={pegawaiList}
+          submissions={submissions}
+          onClose={() => setIsRekapModalOpen(false)}
+        />
       )}
     </div>
   );

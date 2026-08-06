@@ -13,7 +13,7 @@ interface ApprovalViewProps {
   currentPegawai: Pegawai | null;
   activeKepstaRecord?: KepalaStasiunAccessRecord | null;
   approvalHistory: ApprovalHistoryItem[];
-  onUpdateStatus: (submissionId: string, status: 'WAITING_APPROVAL' | 'APPROVED' | 'REJECTED') => void;
+  onUpdateStatus: (submissionId: string, status: 'WAITING_APPROVAL' | 'APPROVED' | 'REJECTED') => void | Promise<void>;
   onOpenPrintModal?: (sub: PengajuanPelatihan) => void;
   onShowSuccess?: (data: { title: string; message?: string; badge?: string; type?: 'success' | 'approval' | 'info' }) => void;
 }
@@ -61,7 +61,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
     (activeTab === 'pending_kepsta' ? pendingKepstaQueue[0] : activeTab === 'pending_sdm' ? pendingSdmQueue[0] : processedQueue[0]) ||
     submissions[0] || null;
 
-  const handleVerifyBySDM = (sub: PengajuanPelatihan) => {
+  const handleVerifyBySDM = async (sub: PengajuanPelatihan) => {
     if (!note.trim()) {
       if (onShowSuccess) {
         onShowSuccess({
@@ -85,10 +85,10 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
       note: note,
       createdAt: new Date().toISOString()
     };
-    Storage.addApprovalHistory(historyItem);
+    await Storage.addApprovalHistory(historyItem);
 
     // 2. Audit Log FIRST
-    Storage.addAuditLog({
+    await Storage.addAuditLog({
       userId: currentUser?.id || '',
       userName: currentPegawai?.nama || 'Admin SDM',
       action: 'VERIFY_SUBMISSION',
@@ -98,7 +98,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
     });
 
     // 3. Update status & refresh state
-    onUpdateStatus(sub.id, 'WAITING_APPROVAL');
+    await onUpdateStatus(sub.id, 'WAITING_APPROVAL');
 
     if (onShowSuccess) {
       onShowSuccess({
@@ -111,7 +111,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
     setNote('');
   };
 
-  const handleApproveByKepsta = (sub: PengajuanPelatihan) => {
+  const handleApproveByKepsta = async (sub: PengajuanPelatihan) => {
     const finalNote = note.trim() || 'Disetujui oleh Kepala Stasiun TVRI Sumatera Selatan.';
 
     // 1. Add History FIRST
@@ -125,10 +125,10 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
       note: finalNote,
       createdAt: new Date().toISOString()
     };
-    Storage.addApprovalHistory(historyItem);
+    await Storage.addApprovalHistory(historyItem);
 
     // 2. Audit Log FIRST
-    Storage.addAuditLog({
+    await Storage.addAuditLog({
       userId: currentUser?.id || '',
       userName: currentPegawai?.nama || 'Kepala Stasiun',
       action: 'APPROVE_SUBMISSION',
@@ -138,7 +138,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
     });
 
     // 3. Update status & refresh state
-    onUpdateStatus(sub.id, 'APPROVED');
+    await onUpdateStatus(sub.id, 'APPROVED');
 
     if (onShowSuccess) {
       onShowSuccess({
@@ -151,7 +151,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
     setNote('');
   };
 
-  const handleRejectByKepsta = (sub: PengajuanPelatihan) => {
+  const handleRejectByKepsta = async (sub: PengajuanPelatihan) => {
     if (!note.trim()) {
       if (onShowSuccess) {
         onShowSuccess({
@@ -175,10 +175,10 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
       note: note,
       createdAt: new Date().toISOString()
     };
-    Storage.addApprovalHistory(historyItem);
+    await Storage.addApprovalHistory(historyItem);
 
     // 2. Audit Log FIRST
-    Storage.addAuditLog({
+    await Storage.addAuditLog({
       userId: currentUser?.id || '',
       userName: currentPegawai?.nama || 'Kepala Stasiun',
       action: 'REJECT_SUBMISSION',
@@ -188,7 +188,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
     });
 
     // 3. Update status & refresh state
-    onUpdateStatus(sub.id, 'REJECTED');
+    await onUpdateStatus(sub.id, 'REJECTED');
 
     if (onShowSuccess) {
       onShowSuccess({

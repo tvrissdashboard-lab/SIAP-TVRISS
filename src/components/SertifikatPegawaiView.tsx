@@ -13,7 +13,7 @@ interface SertifikatPegawaiViewProps {
   currentUser: UserAccount | null;
   currentPegawai?: Pegawai | null;
   activeKepstaRecord?: KepalaStasiunAccessRecord | null;
-  onRefreshData: () => void;
+  onRefreshData: () => void | Promise<void>;
   onShowSuccess: (title: string, message?: string) => void;
 }
 
@@ -229,10 +229,12 @@ TVRI Stasiun Sumatera Selatan dan dapat dipergunakan untuk verifikasi administra
   // Action: Approve Certificate
   const handleApproveCertificate = (cert: SertifikatPelatihan) => {
     setIsProcessing(true);
-    setTimeout(() => {
-      Storage.updateCertificateStatus(cert.id, 'DISETUJUI', currentUser?.username || 'Admin SDM');
+    setTimeout(async () => {
+      // Tunggu update status selesai tersimpan di database SEBELUM refresh data,
+      // supaya box "Menunggu Verifikasi" / "Perlu Revisi" tidak menarik data lama (race condition).
+      await Storage.updateCertificateStatus(cert.id, 'DISETUJUI', currentUser?.username || 'Admin SDM');
 
-      Storage.addAuditLog({
+      await Storage.addAuditLog({
         userId: currentUser?.username || 'ADMIN_SDM',
         userName: currentUser?.role === 'KEPALA_STASIUN' ? 'EFLIANTY ANALISA' : 'Admin SDM',
         action: 'APPROVE_CERTIFICATE',
@@ -241,9 +243,9 @@ TVRI Stasiun Sumatera Selatan dan dapat dipergunakan untuk verifikasi administra
         status: 'SUCCESS'
       });
 
-      setIsProcessing(false);
-      onRefreshData();
+      await onRefreshData();
 
+      setIsProcessing(false);
       playNotificationSound();
 
       onShowSuccess(
@@ -264,15 +266,17 @@ TVRI Stasiun Sumatera Selatan dan dapat dipergunakan untuk verifikasi administra
     }
 
     setIsProcessing(true);
-    setTimeout(() => {
-      Storage.updateCertificateStatus(
+    setTimeout(async () => {
+      // Tunggu update status selesai tersimpan di database SEBELUM refresh data,
+      // supaya box "Menunggu Verifikasi" / "Perlu Revisi" tidak menarik data lama (race condition).
+      await Storage.updateCertificateStatus(
         rejectionModalCert.id,
         rejectionAction,
         currentUser?.username || 'Admin SDM',
         rejectionReason.trim()
       );
 
-      Storage.addAuditLog({
+      await Storage.addAuditLog({
         userId: currentUser?.username || 'ADMIN_SDM',
         userName: currentUser?.role === 'KEPALA_STASIUN' ? 'EFLIANTY ANALISA' : 'Admin SDM',
         action: rejectionAction === 'DITOLAK' ? 'REJECT_CERTIFICATE' : 'REVISION_CERTIFICATE',
@@ -281,10 +285,11 @@ TVRI Stasiun Sumatera Selatan dan dapat dipergunakan untuk verifikasi administra
         status: 'SUCCESS'
       });
 
+      await onRefreshData();
+
       setIsProcessing(false);
       setRejectionModalCert(null);
       setRejectionReason('');
-      onRefreshData();
 
       onShowSuccess(
         rejectionAction === 'DITOLAK' ? 'Sertifikat Ditolak' : 'Catatan Revisi Terkirim',

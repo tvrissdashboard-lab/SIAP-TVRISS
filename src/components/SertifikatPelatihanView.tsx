@@ -269,11 +269,11 @@ Sasaran Kinerja Pegawai (SKP), kenaikan pangkat, atau administrasi SDM.
   const handleSendPortfolioToEmail = () => {
     setIsSendingEmail(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsSendingEmail(false);
       const targetEmail = currentPegawai.email || 'kelembagaan.tvrisumsel@gmail.com';
 
-      Storage.addAuditLog({
+      await Storage.addAuditLog({
         userId: currentPegawai.nip,
         userName: currentPegawai.nama,
         action: 'SEND_PORTFOLIO_EMAIL',

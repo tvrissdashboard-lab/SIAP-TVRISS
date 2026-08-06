@@ -9,7 +9,7 @@ interface ManajemenPasswordViewProps {
   usersList: UserAccount[];
   currentUser?: UserAccount | null;
   currentPegawai?: Pegawai | null;
-  onRefreshData?: () => void;
+  onRefreshData?: () => void | Promise<void>;
   onShowSuccess?: (data: { title: string; message?: string; badge?: string; type?: 'success' | 'approval' | 'info' }) => void;
 }
 
@@ -85,7 +85,7 @@ export const ManajemenPasswordView: React.FC<ManajemenPasswordViewProps> = ({
     setErrorMsg('');
   };
 
-  const handleSubmitPassword = (e: React.FormEvent) => {
+  const handleSubmitPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -112,7 +112,7 @@ export const ManajemenPasswordView: React.FC<ManajemenPasswordViewProps> = ({
     setIsSubmitting(true);
 
     const adminName = currentPegawai?.nama || currentUser?.username || 'Admin SDM';
-    const result = Storage.adminSetPegawaiPassword(selectedPegawai.id, cleanNew, adminName);
+    const result = await Storage.adminSetPegawaiPassword(selectedPegawai.id, cleanNew, adminName);
 
     setIsSubmitting(false);
 
@@ -122,7 +122,7 @@ export const ManajemenPasswordView: React.FC<ManajemenPasswordViewProps> = ({
     }
 
     handleCloseModal();
-    if (onRefreshData) onRefreshData();
+    if (onRefreshData) await onRefreshData();
 
     if (onShowSuccess) {
       onShowSuccess({

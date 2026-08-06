@@ -33,7 +33,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changeMsg, setChangeMsg] = useState('');
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -68,7 +68,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         isActive: matchedPegawai.aktif !== false,
         createdAt: new Date().toISOString()
       };
-      Storage.saveUser(newUser);
+      await Storage.saveUser(newUser);
       matchedUser = newUser;
       console.log(`[AUTH LOGIN] Dynamic UserAccount provisioned for Pegawai ${matchedPegawai.nama} (${matchedPegawai.nip})`);
     }
@@ -107,7 +107,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     if (!isPassValid && matchedUser.passwordHash === cleanPass) {
       isPassValid = true;
       matchedUser.passwordHash = inputHash;
-      Storage.saveUser(matchedUser);
+      await Storage.saveUser(matchedUser);
     }
 
     if (!isPassValid) {

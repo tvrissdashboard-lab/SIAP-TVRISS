@@ -235,16 +235,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </button>
               </div>
 
-              <div className="flex items-center justify-between bg-rose-50 border border-rose-200 p-3.5 rounded-xl">
+              <div className="flex items-center justify-between bg-slate-100 border border-slate-200 p-3.5 rounded-xl opacity-70">
                 <div>
-                  <h4 className="font-bold text-rose-900 text-xs">Reset Factory Default</h4>
-                  <p className="text-[11px] text-slate-600 font-medium">Kembalikan seluruh data master pegawai & pengajuan ke draf awal demo.</p>
+                  <h4 className="font-bold text-slate-700 text-xs">Reset Factory Default (Dinonaktifkan)</h4>
+                  <p className="text-[11px] text-slate-500 font-medium">Fitur ini dinonaktifkan demi keamanan karena akan menimpa seluruh data pegawai & pengajuan yang sudah nyata (produksi) dengan data demo.</p>
                 </div>
                 <button
-                  onClick={() => {
-                    onResetData();
-                  }}
-                  className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 shrink-0 shadow-sm cursor-pointer"
+                  disabled
+                  title="Dinonaktifkan untuk melindungi data produksi"
+                  className="bg-slate-300 text-slate-500 font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center space-x-1.5 shrink-0 cursor-not-allowed"
                 >
                   <RefreshCw className="w-4 h-4" />
                   <span>Reset Demo Data</span>

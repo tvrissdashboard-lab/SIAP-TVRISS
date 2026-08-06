@@ -27,7 +27,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -56,7 +56,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     setIsSubmitting(true);
 
     // Call Storage handler
-    const result = Storage.changeUserPassword(
+    const result = await Storage.changeUserPassword(
       currentUser.id,
       cleanOld,
       cleanNew,

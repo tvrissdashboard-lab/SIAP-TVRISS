@@ -131,6 +131,43 @@ function MainAppContent() {
     loadData();
   }, []);
 
+  // Auto-sync: tarik ulang data dari server secara berkala + saat tab kembali aktif,
+  // supaya perubahan yang dibuat pengguna lain (mis. pengajuan baru dari Pegawai,
+  // approve/reject dari Kepsta, verifikasi sertifikat dari Admin) langsung terlihat
+  // tanpa harus refresh manual.
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const AUTO_SYNC_INTERVAL_MS = 12000; // 12 detik
+
+    const silentSync = () => {
+      // Jangan ganggu jika tab sedang tidak aktif/di-minimize (hemat request & hindari flicker)
+      if (document.visibilityState !== 'visible') return;
+      loadData();
+    };
+
+    const syncTimer = setInterval(silentSync, AUTO_SYNC_INTERVAL_MS);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Tab baru saja difokuskan kembali -> langsung sinkronkan data terbaru
+        loadData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    const handleWindowFocus = () => {
+      loadData();
+    };
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      clearInterval(syncTimer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [currentUser]);
+
   // Strict User Profile Resolution Engine: Ensure profile is linked ONLY via valid employeeId
   useEffect(() => {
     if (!currentUser || !currentUser.employeeId || currentUser.employeeId.trim() === '') {
@@ -394,13 +431,18 @@ function MainAppContent() {
     await loadData();
   };
 
+  // CATATAN KEAMANAN: Storage.resetAll() sengaja TIDAK diimplementasikan.
+  // Tombol ini adalah sisa fitur demo ("kembalikan ke draf awal") yang akan MENIMPA
+  // seluruh data pegawai & pengajuan nyata dengan data dummy jika benar-benar dijalankan.
+  // Karena aplikasi ini sekarang dipakai dengan data produksi asli, fitur ini dinonaktifkan
+  // agar tidak ada risiko kehilangan data secara tidak sengaja. Tombolnya pun sudah
+  // dinonaktifkan di SettingsView.tsx. Hubungi developer jika fitur reset benar-benar
+  // dibutuhkan (sebaiknya dengan konfirmasi ketik ulang & pembatasan role SUPER_ADMIN).
   const handleResetDemoData = async () => {
-    await Storage.resetAll();
-    await loadData();
     triggerSuccessNotification({
-      title: 'Demo Data Di-Reset',
-      message: 'Seluruh data SIAP SUMSEL berhasil dikembalikan ke draf awal TVRI Sumatera Selatan.',
-      badge: 'RESET FACTORY',
+      title: 'Fitur Dinonaktifkan',
+      message: 'Reset data telah dinonaktifkan untuk melindungi data produksi SIAP SUMSEL yang sudah berjalan.',
+      badge: 'KEAMANAN DATA',
       type: 'info'
     });
   };
