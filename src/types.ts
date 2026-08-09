@@ -55,6 +55,7 @@ export interface PengajuanPelatihan {
   tanggalSelesai: string;
   lokasi: string;
   keterangan: string;
+  jumlahJp?: number; // Jumlah Jam Pelatihan (JP/JPL) yang diajukan/diikuti pegawai
   status: SubmissionStatus;
   lampiranUrl?: string;
   lampiranNama?: string;
@@ -106,6 +107,7 @@ export interface SertifikatPelatihan {
   jenisPelatihan: string;
   penyelenggara: string;
   tanggalPelatihan: string; // e.g. "10 Agu 2026 - 15 Agu 2026"
+  jumlahJp?: number; // Jumlah Jam Pelatihan (JP/JPL), diturunkan dari pengajuan terkait
   statusPelatihan: 'SELESAI' | 'BERLANGSUNG';
   nomorSertifikat?: string;
   tanggalSertifikat?: string;
