@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Database, RefreshCw, Download, ShieldCheck, Building2, Save, User, Key, UserCheck } from 'lucide-react';
+import { Settings as SettingsIcon, Database, RefreshCw, Download, ShieldCheck, Building2, Save, User, Key, UserCheck, AlertTriangle } from 'lucide-react';
 import { UNIT_KERJA_LIST } from '../data/initialData';
 import { UserAccount, Pegawai } from '../types';
+import { Storage } from '../lib/storage';
 
 interface SettingsViewProps {
   currentUser?: UserAccount | null;
@@ -10,6 +11,10 @@ interface SettingsViewProps {
   onResetData: () => void;
   onShowSuccess?: (data: { title: string; message?: string; badge?: string; type?: 'success' | 'approval' | 'info' }) => void;
 }
+
+// Diaktifkan lewat file .env: VITE_ENABLE_FACTORY_RESET=true
+// Default-nya SENGAJA nonaktif demi keamanan data produksi di Supabase.
+const isFactoryResetEnabled = (): boolean => import.meta.env.VITE_ENABLE_FACTORY_RESET === 'true';
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   currentUser,
@@ -21,6 +26,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [sessionTimeout, setSessionTimeout] = useState('30');
   const [maxUploadMb, setMaxUploadMb] = useState('10');
   const [timeZone, setTimeZone] = useState('Asia/Jakarta');
+  const [isExporting, setIsExporting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+  const resetEnabled = isFactoryResetEnabled();
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,32 +44,66 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  const handleExportJSON = () => {
-    const data = {
-      pegawai: localStorage.getItem('siap_sumsel_pegawai_v1'),
-      users: localStorage.getItem('siap_sumsel_users_v1'),
-      submissions: localStorage.getItem('siap_sumsel_submissions_v1'),
-      approvalHistory: localStorage.getItem('siap_sumsel_approval_history_v1'),
-      auditLogs: localStorage.getItem('siap_sumsel_audit_logs_v1'),
-      exportedAt: new Date().toISOString()
-    };
+  const handleExportJSON = async () => {
+    setIsExporting(true);
+    try {
+      // Data diambil langsung dari Supabase (bukan localStorage kosong) — backup nyata.
+      const data = await Storage.exportFullBackup();
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `SIAP_SUMSEL_BACKUP_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SIAP_SUMSEL_BACKUP_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-    if (onShowSuccess) {
-      onShowSuccess({
-        title: 'Ekspor Data Berhasil',
-        message: 'Berkas cadangan JSON database SIAP SUMSEL telah diunduh ke perangkat Anda.',
-        badge: 'BACKUP DATA',
-        type: 'success'
-      });
+      if (onShowSuccess) {
+        onShowSuccess({
+          title: 'Ekspor Data Berhasil',
+          message: 'Berkas cadangan JSON berisi seluruh data pegawai, pengajuan, sertifikat, dan riwayat dari database telah diunduh.',
+          badge: 'BACKUP DATA',
+          type: 'success'
+        });
+      }
+    } catch (err) {
+      console.error('[BACKUP ERROR]', err);
+      if (onShowSuccess) {
+        onShowSuccess({
+          title: 'Gagal Mengekspor Data',
+          message: 'Terjadi kendala saat mengambil data dari database. Silakan coba lagi.',
+          badge: 'BACKUP DATA',
+          type: 'info'
+        });
+      }
+    } finally {
+      setIsExporting(false);
     }
   };
+
+  const handleConfirmFactoryReset = async () => {
+    if (resetConfirmText !== 'RESET') return;
+    setIsResetting(true);
+    try {
+      const result = await Storage.factoryReset();
+      setShowResetConfirm(false);
+      setResetConfirmText('');
+      if (onShowSuccess) {
+        onShowSuccess({
+          title: result.success ? 'Reset Factory Default Berhasil' : 'Reset Gagal',
+          message: result.message,
+          badge: 'RESET DATA',
+          type: result.success ? 'success' : 'info'
+        });
+      }
+      onResetData();
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
 
   return (
     <div className="space-y-6">
@@ -224,35 +268,95 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="flex items-center justify-between bg-blue-50/60 p-3.5 rounded-xl border border-blue-200">
                 <div>
                   <h4 className="font-bold text-slate-900 text-xs">Ekspor Backup Data (JSON)</h4>
-                  <p className="text-[11px] text-slate-600 font-medium">Unduh salinan cadangan seluruh database aplikasi SIAP SUMSEL.</p>
+                  <p className="text-[11px] text-slate-600 font-medium">Unduh salinan cadangan seluruh database aplikasi SIAP SUMSEL (data pegawai, pengajuan, sertifikat & riwayat — langsung dari database, bukan data kosong).</p>
                 </div>
                 <button
                   onClick={handleExportJSON}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 shrink-0 shadow-sm"
+                  disabled={isExporting}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 shrink-0 shadow-sm disabled:opacity-50"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Ekspor Data</span>
+                  <span>{isExporting ? 'Mengekspor...' : 'Ekspor Data'}</span>
                 </button>
               </div>
 
-              <div className="flex items-center justify-between bg-slate-100 border border-slate-200 p-3.5 rounded-xl opacity-70">
+              <div className={`flex items-center justify-between p-3.5 rounded-xl border ${resetEnabled ? 'bg-rose-50 border-rose-200' : 'bg-slate-100 border-slate-200 opacity-70'}`}>
                 <div>
-                  <h4 className="font-bold text-slate-700 text-xs">Reset Factory Default (Dinonaktifkan)</h4>
-                  <p className="text-[11px] text-slate-500 font-medium">Fitur ini dinonaktifkan demi keamanan karena akan menimpa seluruh data pegawai & pengajuan yang sudah nyata (produksi) dengan data demo.</p>
+                  <h4 className={`font-bold text-xs ${resetEnabled ? 'text-rose-900' : 'text-slate-700'}`}>
+                    Reset Factory Default {resetEnabled ? '' : '(Dinonaktifkan)'}
+                  </h4>
+                  <p className={`text-[11px] font-medium ${resetEnabled ? 'text-rose-700' : 'text-slate-500'}`}>
+                    {resetEnabled
+                      ? 'AKTIF: fitur ini akan menghapus PERMANEN seluruh data pegawai, pengajuan, sertifikat, dan riwayat di database. Gunakan hanya jika benar-benar diperlukan.'
+                      : 'Dinonaktifkan secara default demi keamanan karena akan menghapus seluruh data produksi (pegawai, pengajuan, sertifikat) di database Supabase secara permanen.'}
+                  </p>
+                  {!resetEnabled && (
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Untuk mengaktifkan: tambahkan <code className="bg-slate-200 px-1 rounded">VITE_ENABLE_FACTORY_RESET=true</code> pada file <code className="bg-slate-200 px-1 rounded">.env</code> lalu build ulang aplikasi. Hapus/ubah ke <code className="bg-slate-200 px-1 rounded">false</code> untuk menonaktifkan kembali.
+                    </p>
+                  )}
                 </div>
                 <button
-                  disabled
-                  title="Dinonaktifkan untuk melindungi data produksi"
-                  className="bg-slate-300 text-slate-500 font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center space-x-1.5 shrink-0 cursor-not-allowed"
+                  disabled={!resetEnabled}
+                  onClick={() => setShowResetConfirm(true)}
+                  title={resetEnabled ? 'Reset seluruh data produksi' : 'Dinonaktifkan untuk melindungi data produksi'}
+                  className={`font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center space-x-1.5 shrink-0 ${
+                    resetEnabled
+                      ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer'
+                      : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                  }`}
                 >
                   <RefreshCw className="w-4 h-4" />
-                  <span>Reset Demo Data</span>
+                  <span>Reset Data</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Factory Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="min-h-full flex items-center justify-center">
+            <div className="bg-white border border-rose-200 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
+              <div className="flex items-center space-x-2 text-rose-700">
+                <AlertTriangle className="w-6 h-6" />
+                <h3 className="font-extrabold text-base">Konfirmasi Reset Factory Default</h3>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Tindakan ini akan <strong className="text-rose-700">menghapus permanen</strong> seluruh data pegawai, pengajuan pelatihan, sertifikat, riwayat approval, dan log audit di database. Tindakan ini <strong>tidak dapat dibatalkan</strong>.
+              </p>
+              <p className="text-xs text-slate-600">
+                Ketik <strong className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">RESET</strong> di bawah ini untuk melanjutkan:
+              </p>
+              <input
+                type="text"
+                value={resetConfirmText}
+                onChange={(e) => setResetConfirmText(e.target.value)}
+                placeholder="Ketik RESET"
+                className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-mono focus:border-rose-500 focus:outline-none"
+              />
+              <div className="flex items-center justify-end space-x-2 pt-2">
+                <button
+                  onClick={() => { setShowResetConfirm(false); setResetConfirmText(''); }}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3.5 py-2 rounded-xl text-xs transition"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleConfirmFactoryReset}
+                  disabled={resetConfirmText !== 'RESET' || isResetting}
+                  className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isResetting ? 'Mereset...' : 'Ya, Hapus Semua Data'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
