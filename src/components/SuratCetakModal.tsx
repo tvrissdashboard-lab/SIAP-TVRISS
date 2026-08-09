@@ -1,6 +1,7 @@
 import React from 'react';
 import { Printer, X, ShieldCheck, Download } from 'lucide-react';
 import { PengajuanPelatihan } from '../types';
+import { TvriSumselLogo } from './TvriSumselLogo';
 
 interface SuratCetakModalProps {
   submission: PengajuanPelatihan;
@@ -13,8 +14,9 @@ export const SuratCetakModal: React.FC<SuratCetakModalProps> = ({ submission, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full p-4 md:p-6 shadow-2xl space-y-4 my-8 text-slate-800">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm p-4 print:static print:bg-white print:p-0 print:backdrop-blur-none">
+      <div className="min-h-full flex items-start justify-center print:block print:min-h-0">
+        <div className="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full p-4 md:p-6 shadow-2xl space-y-4 my-8 text-slate-800 max-h-[calc(100vh-4rem)] overflow-y-auto print:max-h-none print:overflow-visible print:border-0 print:shadow-none print:rounded-none print:p-0 print:m-0 print:max-w-full">
         {/* Controls Bar (Hidden during print) */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 print:hidden">
           <div className="flex items-center space-x-2">
@@ -48,14 +50,13 @@ export const SuratCetakModal: React.FC<SuratCetakModalProps> = ({ submission, on
         </div>
 
         {/* Printable Paper Canvas (Styled as official white letterhead) */}
-        <div id="printable-surat-canvas" className="bg-white text-slate-900 p-8 sm:p-12 rounded-xl border border-slate-200 shadow-inner text-xs leading-relaxed space-y-6 font-serif">
+        <div id="printable-surat-canvas" className="bg-white text-slate-900 p-8 sm:p-12 rounded-xl border border-slate-200 shadow-inner text-xs leading-relaxed space-y-6 font-serif print:p-0 print:border-0 print:shadow-none print:rounded-none">
           {/* Kop Surat Official */}
           <div className="text-center border-b-4 border-double border-slate-900 pb-4 space-y-1">
             <div className="flex items-center justify-center space-x-3">
-              <div className="w-12 h-12 bg-blue-900 text-amber-300 font-sans font-black flex items-center justify-center text-xl rounded shadow-sm">
-                TVRI
-              </div>
+              <TvriSumselLogo className="h-14" badge={false} />
               <div className="text-center">
+
                 <h2 className="font-sans font-extrabold text-base tracking-widest text-blue-950 uppercase">
                   LEMBAGA PENYIARAN PUBLIK TELEVISI REPUBLIK INDONESIA
                 </h2>
@@ -170,6 +171,7 @@ export const SuratCetakModal: React.FC<SuratCetakModalProps> = ({ submission, on
               <p className="font-mono text-[10px] text-slate-600 font-bold">NIP. 197003061998032006</p>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

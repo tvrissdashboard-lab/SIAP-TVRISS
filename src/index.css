@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  /* Sembunyikan semua elemen lain di halaman saat mencetak, hanya modal cetak yang tampil */
+  body > #root > *:not(:has(#printable-surat-canvas, #printable-rekap-canvas)) {
+    display: none !important;
+  }
+}
+

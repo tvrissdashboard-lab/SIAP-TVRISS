@@ -686,8 +686,9 @@ function MainAppContent() {
         if (!activeDetailSubmission) return null;
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-            <div className="bg-white border border-slate-200 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 my-8 text-slate-800">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm p-4">
+            <div className="min-h-full flex items-center justify-center">
+            <div className="bg-white border border-slate-200 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 my-8 text-slate-800 max-h-[calc(100vh-4rem)] overflow-y-auto">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
@@ -733,6 +734,10 @@ function MainAppContent() {
                   <div className="col-span-2">
                     <span className="text-slate-500 block text-[10px] uppercase font-bold">Lokasi:</span>
                     <span className="font-medium text-slate-800">{activeDetailSubmission.lokasi}</span>
+                  </div>
+                  <div className="col-span-2 pt-2 border-t border-slate-200">
+                    <span className="text-slate-500 block text-[10px] uppercase font-bold">Jumlah JP (Jam Pelatihan):</span>
+                    <span className="font-bold text-slate-800">{activeDetailSubmission.jumlahJp ? `${activeDetailSubmission.jumlahJp} JP` : 'Belum diisi'}</span>
                   </div>
                 </div>
 
@@ -808,6 +813,7 @@ function MainAppContent() {
                   Tutup
                 </button>
               </div>
+            </div>
             </div>
           </div>
         );

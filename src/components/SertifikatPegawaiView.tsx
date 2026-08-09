@@ -5,7 +5,9 @@ import {
 } from 'lucide-react';
 import { Pegawai, SertifikatPelatihan, CertificateStatus, UserAccount, Role, KepalaStasiunAccessRecord, checkHasKepalaStasiunPrivilege } from '../types';
 import { Storage, playNotificationSound } from '../lib/storage';
+import { generatePortfolioPDF, generateCertificateSummaryPDF } from '../lib/pdf';
 import { Pagination } from './Pagination';
+import { TvriSumselLogo } from './TvriSumselLogo';
 
 interface SertifikatPegawaiViewProps {
   pegawaiList: Pegawai[];
@@ -32,106 +34,43 @@ export const SertifikatPegawaiView: React.FC<SertifikatPegawaiViewProps> = ({
   const isKepsta = checkHasKepalaStasiunPrivilege(currentPegawai?.id || currentUser?.employeeId, activeKepstaRecord, currentPegawai) || role === 'KEPALA_STASIUN';
   const isAdmin = (role === 'ADMIN_SDM' || role === 'SUPER_ADMIN') && !isKepsta;
 
-  // Download certificate helper
-  const handleDownloadCertificate = (cert: SertifikatPelatihan) => {
+  const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+  // Download certificate helper — file asli bila sudah diunggah, atau PDF ringkasan resmi bila belum
+  const handleDownloadCertificate = async (cert: SertifikatPelatihan) => {
     // Jika file asli sudah tersimpan di Supabase Storage, buka/unduh file aslinya
     if (cert.fileUrl && !cert.fileUrl.startsWith('blob:')) {
       window.open(cert.fileUrl, '_blank');
       return;
     }
 
-    const content = `=====================================================
-LPP TVRI STASIUN SUMATERA SELATAN
-SISTEM INFORMASI ADMINISTRASI PELATIHAN (SIAP)
-=====================================================
-DOKUMEN SERTIFIKAT PELATIHAN RESMI
-
-Nama Pegawai    : ${cert.employeeNama || 'Pegawai TVRI'}
-NIP             : ${cert.employeeNip || '-'}
-Unit Kerja      : ${cert.employeeUnitKerja || '-'}
-Jabatan         : ${cert.employeeJabatan || '-'}
-
-Judul Pelatihan : ${cert.judulPelatihan}
-Jenis Rumpun    : ${cert.jenisPelatihan}
-Penyelenggara   : ${cert.penyelenggara}
-Tanggal         : ${cert.tanggalPelatihan}
-No. Sertifikat  : ${cert.nomorSertifikat || 'SERT/2026/TVRI'}
-Status          : ${cert.status}
-=====================================================
-Dokumen ini merupakan arsip sertifikat digital terverifikasi dalam portal SIAP TVRI Sumatera Selatan.`;
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = cert.fileNama || `Sertifikat_${cert.judulPelatihan.replace(/\s+/g, '_')}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  // Download Employee Portfolio PDF helper
-  const handleDownloadEmployeePortfolioPDF = (pegawai: Pegawai) => {
-    const userCerts = pegawaiCertificatesMap.get(pegawai.id) || pegawaiCertificatesMap.get(pegawai.nip) || [];
-    const todayStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-
-    let pdfContent = `================================================================================
-LPP TVRI STASIUN SUMATERA SELATAN
-PORTAL SISTEM INFORMASI ADMINISTRASI PELATIHAN (SIAP)
-Jl. Kampus TVRI, Palembang, Sumatera Selatan
-================================================================================
-DOKUMEN PORTOFOLIO REKAPITULASI PELATIHAN & SERTIFIKASI PEGAWAI
-
-I. BIODATA PEGAWAI
---------------------------------------------------------------------------------
-Nama Pegawai    : ${pegawai.nama}
-NIP             : ${pegawai.nip}
-Jabatan         : ${pegawai.jabatan}
-Unit Kerja      : ${pegawai.unitKerja}
-Status Kepegawaian : ${pegawai.statusPegawai || 'PNS / PPPK / Pegawai Tetap'}
-
-II. RINGKASAN PORTOFOLIO
---------------------------------------------------------------------------------
-Total Pelatihan Diikuti : ${userCerts.length} Program
-Total Sertifikat Disetujui : ${userCerts.filter(c => c.status === 'DISETUJUI').length} Sertifikat
-Tanggal Cetak Dokumen   : ${todayStr}
-
-III. DAFTAR SERTIFIKAT PELATIHAN
---------------------------------------------------------------------------------
-`;
-
-    if (userCerts.length === 0) {
-      pdfContent += `Belum ada sertifikat pelatihan yang terdaftar di portal SIAP.\n`;
-    } else {
-      userCerts.forEach((item, index) => {
-        pdfContent += `${index + 1}. Judul Pelatihan : ${item.judulPelatihan}
-   Penyelenggara  : ${item.penyelenggara}
-   Tanggal        : ${item.tanggalPelatihan}
-   No. Sertifikat : ${item.nomorSertifikat || '-'}
-   Status Berkas  : ${item.status === 'DISETUJUI' ? 'VERIFIED (DISETUJUI)' : item.status}
---------------------------------------------------------------------------------\n`;
-      });
+    setIsDownloadingCert(true);
+    try {
+      await generateCertificateSummaryPDF(cert);
+    } catch (err) {
+      console.error('[PDF ERROR]', err);
+    } finally {
+      setIsDownloadingCert(false);
     }
-
-    pdfContent += `
-================================================================================
-KETERANGAN RESMI:
-Dokumen Portofolio Pelatihan ini diterbitkan secara sah melalui Portal SIAP 
-TVRI Stasiun Sumatera Selatan dan dapat dipergunakan untuk verifikasi administrasi SDM.
-================================================================================`;
-
-    const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Portofolio_Pelatihan_${pegawai.nama.replace(/\s+/g, '_')}_${pegawai.nip}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    playNotificationSound();
-    onShowSuccess('✓ PDF Portofolio Berhasil Dibuat', `Portofolio pelatihan atas nama ${pegawai.nama} berhasil diunduh.`);
   };
+
+  const [isDownloadingPortfolio, setIsDownloadingPortfolio] = useState(false);
+  // Download Employee Portfolio PDF helper — PDF biner asli via jsPDF
+  const handleDownloadEmployeePortfolioPDF = async (pegawai: Pegawai) => {
+    const userCerts = pegawaiCertificatesMap.get(pegawai.id) || pegawaiCertificatesMap.get(pegawai.nip) || [];
+
+    setIsDownloadingPortfolio(true);
+    try {
+      await generatePortfolioPDF(pegawai, userCerts);
+      playNotificationSound();
+      onShowSuccess('✓ PDF Portofolio Berhasil Dibuat', `Portofolio pelatihan atas nama ${pegawai.nama} berhasil diunduh dalam format PDF.`);
+    } catch (err) {
+      console.error('[PDF ERROR]', err);
+      onShowSuccess('Gagal membuat PDF', 'Terjadi kendala saat membuat dokumen PDF. Silakan coba lagi.');
+    } finally {
+      setIsDownloadingPortfolio(false);
+    }
+  };
+
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
@@ -806,80 +745,99 @@ TVRI Stasiun Sumatera Selatan dan dapat dipergunakan untuk verifikasi administra
 
       {/* Document Preview Modal */}
       {previewCert && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8 border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 uppercase">
-                  Pratinjau Sertifikat Resmi
-                </span>
-                <h3 className="font-extrabold text-slate-900 text-base mt-1">{previewCert.judulPelatihan}</h3>
-              </div>
-              <button
-                onClick={() => setPreviewCert(null)}
-                className="text-slate-400 hover:text-slate-700 text-xl font-bold p-1"
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Certificate Display Canvas Frame */}
-            <div className="bg-slate-900 rounded-2xl p-6 text-white border border-slate-800 space-y-6 shadow-inner relative overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white text-xs">
-                    TVRI
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-white">LPP TVRI STASIUN SUMATERA SELATAN</p>
-                    <p className="text-[10px] text-slate-400">Sistem Informasi & Administrasi Pelatihan (SIAP)</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] font-mono text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-800 font-bold block">
-                    {previewCert.nomorSertifikat || 'SERT/2026/TVRI/OFFICIAL'}
-                  </span>
-                  <span className="text-[10px] text-slate-400">Terbit: {previewCert.tanggalSertifikat || '2026'}</span>
-                </div>
-              </div>
-
-              <div className="text-center space-y-3 py-4 bg-slate-950/60 rounded-xl border border-slate-800 p-4">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-amber-300">SERTIFIKAT PELATIHAN</p>
-                <h2 className="text-lg font-black text-white">{previewCert.judulPelatihan}</h2>
-                <p className="text-xs text-slate-300">
-                  Diberikan Kepada: <strong className="text-amber-300 font-black">{previewCert.employeeNama || 'Pegawai TVRI'}</strong>
-                </p>
-                <p className="text-[11px] text-slate-400 font-mono">
-                  NIP: {previewCert.employeeNip} • {previewCert.employeeUnitKerja}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/70 backdrop-blur-sm p-4">
+          <div className="min-h-full flex items-start justify-center">
+            <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8 border border-slate-200 max-h-[calc(100vh-4rem)] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Penyelenggara</p>
-                  <p className="font-semibold text-slate-200">{previewCert.penyelenggara}</p>
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 uppercase">
+                    Pratinjau Sertifikat Resmi
+                  </span>
+                  <h3 className="font-extrabold text-slate-900 text-base mt-1">{previewCert.judulPelatihan}</h3>
                 </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Status Verifikasi</p>
-                  <p className="font-bold text-emerald-400 flex items-center space-x-1 justify-end">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Terverifikasi Sistem SIAP</span>
+                <button
+                  onClick={() => setPreviewCert(null)}
+                  className="text-slate-400 hover:text-slate-700 text-xl font-bold p-1"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {previewCert.fileUrl && !previewCert.fileUrl.startsWith('blob:') ? (
+                previewCert.fileType === 'image' ? (
+                  <img
+                    src={previewCert.fileUrl}
+                    alt={previewCert.judulPelatihan}
+                    className="w-full max-h-[65vh] object-contain rounded-xl border border-slate-200 bg-slate-50"
+                  />
+                ) : (
+                  <iframe
+                    src={previewCert.fileUrl}
+                    title={previewCert.judulPelatihan}
+                    className="w-full h-[65vh] rounded-xl border border-slate-200 bg-slate-50"
+                  />
+                )
+              ) : (
+                <div className="bg-white rounded-2xl p-6 text-slate-800 border-2 border-slate-200 space-y-5">
+                  <div className="flex items-center justify-between border-b-2 border-double border-slate-900 pb-4">
+                    <div className="flex items-center space-x-3">
+                      <TvriSumselLogo className="h-10" badge={false} />
+                      <div>
+                        <p className="text-xs font-black text-slate-900 uppercase">LPP TVRI Stasiun Sumatera Selatan</p>
+                        <p className="text-[10px] text-slate-500">Sistem Informasi & Administrasi Pelatihan (SIAP)</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold block">
+                        {previewCert.nomorSertifikat || 'Belum ada nomor sertifikat'}
+                      </span>
+                      <span className="text-[10px] text-slate-400">Terbit: {previewCert.tanggalSertifikat || '-'}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-center space-y-2 py-5 bg-slate-50 rounded-xl border border-slate-200">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-blue-800">Ringkasan Riwayat Pelatihan</p>
+                    <h2 className="text-lg font-black text-slate-900 px-4">{previewCert.judulPelatihan}</h2>
+                    <p className="text-xs text-slate-600">
+                      Diberikan Kepada: <strong className="text-slate-900 font-black">{previewCert.employeeNama || 'Pegawai TVRI'}</strong>
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      NIP: {previewCert.employeeNip} • {previewCert.employeeUnitKerja}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">Penyelenggara</p>
+                      <p className="font-semibold text-slate-800">{previewCert.penyelenggara}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">Status Verifikasi</p>
+                      <p className={`font-bold flex items-center space-x-1 justify-end ${previewCert.status === 'DISETUJUI' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>{previewCert.status === 'DISETUJUI' ? 'Terverifikasi Sistem SIAP' : previewCert.status.replace(/_/g, ' ')}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 italic text-center pt-1">
+                    Belum ada berkas sertifikat asli yang diunggah oleh pegawai.
                   </p>
                 </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <span className="text-xs text-slate-500 font-medium">
+                  Nama File: <strong className="text-slate-800">{previewCert.fileNama || 'Belum ada berkas diunggah'}</strong>
+                </span>
+
+                <button
+                  onClick={() => setPreviewCert(null)}
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-xl text-xs font-semibold"
+                >
+                  Tutup Pratinjau
+                </button>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-              <span className="text-xs text-slate-500 font-medium">
-                Nama File: <strong className="text-slate-800">{previewCert.fileNama || 'Sertifikat_Resmi.pdf'}</strong>
-              </span>
-
-              <button
-                onClick={() => setPreviewCert(null)}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-xl text-xs font-semibold"
-              >
-                Tutup Pratinjau
-              </button>
             </div>
           </div>
         </div>
@@ -887,3 +845,4 @@ TVRI Stasiun Sumatera Selatan dan dapat dipergunakan untuk verifikasi administra
     </div>
   );
 };
+

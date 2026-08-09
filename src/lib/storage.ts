@@ -601,6 +601,7 @@ export const Storage = {
       tanggalSelesai: row.tanggal_selesai,
       lokasi: row.lokasi,
       keterangan: row.keterangan,
+      jumlahJp: row.jumlah_jp != null ? Number(row.jumlah_jp) : undefined,
       status: row.status as SubmissionStatus,
       lampiranNama: row.lampiran_nama,
       lampiranUrl: row.lampiran_url,
@@ -627,6 +628,7 @@ export const Storage = {
       tanggal_selesai: submission.tanggalSelesai,
       lokasi: submission.lokasi,
       keterangan: submission.keterangan,
+      jumlah_jp: submission.jumlahJp ?? null,
       status: submission.status,
       lampiran_nama: submission.lampiranNama,
       lampiran_url: submission.lampiranUrl,
@@ -782,6 +784,7 @@ export const Storage = {
       statusPelatihan: row.status_pelatihan,
       nomorSertifikat: row.nomor_sertifikat,
       tanggalSertifikat: row.tanggal_sertifikat,
+      jumlahJp: row.jumlah_jp != null ? Number(row.jumlah_jp) : undefined,
       fileNama: row.file_nama,
       fileUrl: row.file_url,
       fileType: row.file_type,
@@ -810,6 +813,7 @@ export const Storage = {
       status_pelatihan: cert.statusPelatihan,
       nomor_sertifikat: cert.nomorSertifikat,
       tanggal_sertifikat: cert.tanggalSertifikat,
+      jumlah_jp: cert.jumlahJp ?? null,
       file_nama: cert.fileNama,
       file_url: cert.fileUrl,
       file_type: cert.fileType,
@@ -923,5 +927,64 @@ export const Storage = {
     }
 
     return { success: true, message: 'Hak akses Kepala Stasiun berhasil dicabut.' };
+  },
+
+  // --------------------------------------------------------------------------
+  // 8. BACKUP & FACTORY RESET
+  // --------------------------------------------------------------------------
+  /**
+   * Mengambil seluruh isi database (real data dari Supabase, bukan localStorage)
+   * untuk keperluan Ekspor Backup Data di SettingsView.
+   */
+  async exportFullBackup(): Promise<Record<string, unknown>> {
+    const [pegawai, users, submissions, approvalHistory, auditLogs, certificates, kepstaAccess] = await Promise.all([
+      this.getPegawai(),
+      this.getUsers(),
+      this.getSubmissions(),
+      this.getApprovalHistory(),
+      this.getAuditLogs(),
+      this.getCertificates(),
+      this.getKepalaStasiunAccessRecords()
+    ]);
+
+    return {
+      exportedAt: new Date().toISOString(),
+      source: 'SIAP TVRI Sumsel - Supabase',
+      pegawai,
+      users,
+      submissions,
+      approvalHistory,
+      auditLogs,
+      certificates,
+      kepalaStasiunAccess: kepstaAccess
+    };
+  },
+
+  /**
+   * Menghapus SELURUH data transaksional & pegawai pada database Supabase.
+   * SANGAT DESTRUKTIF — hanya dipanggil dari SettingsView setelah melewati
+   * flag `VITE_ENABLE_FACTORY_RESET=true` dan konfirmasi mengetik "RESET" oleh Admin SDM.
+   * Akun 'users_account' TIDAK dihapus otomatis agar Admin tidak terkunci dari sistemnya sendiri.
+   */
+  async factoryReset(): Promise<{ success: boolean; message: string }> {
+    const tables = [
+      'approval_history',
+      'audit_logs',
+      'sertifikat_pelatihan',
+      'pengajuan_pelatihan',
+      'kepala_stasiun_access',
+      'pegawai'
+    ];
+
+    for (const table of tables) {
+      // Trik "delete all rows": kolom id pasti tidak pernah kosong string ''
+      const { error } = await supabase.from(table).delete().neq('id', '');
+      if (error) {
+        console.error(`[SUPABASE ERROR] Gagal reset tabel ${table}:`, error);
+        return { success: false, message: `Gagal mereset tabel "${table}": ${error.message}` };
+      }
+    }
+
+    return { success: true, message: 'Seluruh data pegawai, pengajuan, sertifikat, dan riwayat berhasil direset ke kondisi kosong.' };
   }
 };

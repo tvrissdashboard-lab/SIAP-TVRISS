@@ -6,7 +6,10 @@ import {
 } from 'lucide-react';
 import { Pegawai, SertifikatPelatihan, CertificateStatus, PengajuanPelatihan } from '../types';
 import { Storage, playNotificationSound } from '../lib/storage';
+import { generatePortfolioPDF } from '../lib/pdf';
+import { sendPortfolioEmail } from '../lib/email';
 import { Pagination } from './Pagination';
+import { TvriSumselLogo } from './TvriSumselLogo';
 
 interface SertifikatPelatihanViewProps {
   currentPegawai: Pegawai | null;
@@ -52,6 +55,16 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
   // Filter certificates for current pegawai
   const myCertificates = certificates.filter(c => c.employeeId === currentPegawai.id || c.employeeNip === currentPegawai.nip);
 
+  // Estimasi JP untuk data lama yang belum mengisi Jumlah JP secara eksplisit saat pengajuan:
+  // konvensi umum 1 hari pelatihan tatap muka = 8 Jam Pelatihan (JP/JPL).
+  const estimateJpFromDuration = (mulai: string, selesai: string): number => {
+    if (!mulai) return 0;
+    const d1 = new Date(mulai);
+    const d2 = selesai ? new Date(selesai) : d1;
+    const hari = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+    return hari * 8;
+  };
+
   // Extract approved/completed training submissions for this pegawai
   const myApprovedSubmissions = submissions.filter(
     s => (s.employeeId === currentPegawai.id || s.employeeNip === currentPegawai.nip) && s.status === 'APPROVED'
@@ -75,6 +88,7 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
         jenisPelatihan: sub.jenisPelatihan,
         penyelenggara: sub.penyelenggara,
         tanggalPelatihan: `${new Date(sub.tanggalMulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} - ${new Date(sub.tanggalSelesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`,
+        jumlahJp: sub.jumlahJp ?? estimateJpFromDuration(sub.tanggalMulai, sub.tanggalSelesai),
         statusPelatihan: 'SELESAI',
         status: 'BELUM_DIUNGGAH'
       });
@@ -87,7 +101,8 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
   const totalSertifikatDisetujui = combinedTrainingList.filter(c => c.status === 'DISETUJUI').length;
   const totalMenungguVerifikasi = combinedTrainingList.filter(c => c.status === 'SEDANG_DIVERIFIKASI').length;
   const totalPerluRevisi = combinedTrainingList.filter(c => c.status === 'PERLU_REVISI' || c.status === 'DITOLAK').length;
-  const totalJamPelatihan = totalPelatihan * 24; // Standard calculated training hours (JPL)
+  // Total JP sesungguhnya = jumlah "Jumlah JP" yang diisi pegawai saat pengajuan (atau estimasi 8 JP/hari bila belum diisi)
+  const totalJamPelatihan = combinedTrainingList.reduce((sum, c) => sum + (c.jumlahJp || 0), 0);
 
   // Pagination calculation
   const totalItems = combinedTrainingList.length;
@@ -199,96 +214,68 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
     );
   };
 
-  // Portfolio PDF Download Handler
-  const handleDownloadPortfolioPDF = () => {
-    const todayStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    const verifiedCerts = combinedTrainingList.filter(c => c.status === 'DISETUJUI');
-
-    let pdfContent = `================================================================================
-LPP TVRI STASIUN SUMATERA SELATAN
-PORTAL SISTEM INFORMASI ADMINISTRASI PELATIHAN (SIAP)
-Jl. Kampus TVRI, Palembang, Sumatera Selatan
-================================================================================
-DOKUMEN PORTOFOLIO REKAPITULASI PELATIHAN & SERTIFIKASI PEGAWAI
-
-I. BIODATA PEGAWAI
---------------------------------------------------------------------------------
-Nama Pegawai    : ${currentPegawai.nama}
-NIP             : ${currentPegawai.nip}
-Jabatan         : ${currentPegawai.jabatan}
-Unit Kerja      : ${currentPegawai.unitKerja}
-Status Kepegawaian : ${currentPegawai.statusPegawai || 'PNS / PPPK / Pegawai Tetap'}
-Email Terdaftar : ${currentPegawai.email || 'kelembagaan.tvrisumsel@gmail.com'}
-
-II. RINGKASAN PORTOFOLIO
---------------------------------------------------------------------------------
-Total Pelatihan Diikuti : ${totalPelatihan} Program
-Total Sertifikat Disetujui : ${totalSertifikatDisetujui} Sertifikat
-Total Jam Pelatihan     : ${totalJamPelatihan} Jam Pelatihan (JPL)
-Tanggal Cetak Dokumen   : ${todayStr}
-
-III. RIWAYAT PELATIHAN DAN SERTIFIKAT TERVERIFIKASI
---------------------------------------------------------------------------------
-`;
-
-    if (combinedTrainingList.length === 0) {
-      pdfContent += `Belum ada riwayat pelatihan yang terdaftar.\n`;
-    } else {
-      combinedTrainingList.forEach((item, index) => {
-        pdfContent += `${index + 1}. Judul Pelatihan : ${item.judulPelatihan}
-   Penyelenggara  : ${item.penyelenggara}
-   Tanggal        : ${item.tanggalPelatihan}
-   No. Sertifikat : ${item.nomorSertifikat || '-'}
-   Status Berkas  : ${item.status === 'DISETUJUI' ? 'VERIFIED (DISETUJUI)' : item.status}
---------------------------------------------------------------------------------\n`;
-      });
+  // Portfolio PDF Download Handler — menghasilkan PDF biner asli via jsPDF, bukan file .txt
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const handleDownloadPortfolioPDF = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      await generatePortfolioPDF(currentPegawai, combinedTrainingList);
+      playNotificationSound();
+      onShowSuccess('✓ PDF berhasil dibuat.', 'Dokumen portofolio pelatihan pegawai telah berhasil diunduh ke perangkat Anda dalam format PDF.');
+    } catch (err) {
+      console.error('[PDF ERROR]', err);
+      onShowSuccess('Gagal membuat PDF', 'Terjadi kendala saat membuat dokumen PDF. Silakan coba lagi.');
+    } finally {
+      setIsGeneratingPdf(false);
     }
-
-    pdfContent += `
-================================================================================
-KETERANGAN RESMI:
-Dokumen Portofolio Pelatihan ini diterbitkan secara sah melalui Portal SIAP 
-TVRI Stasiun Sumatera Selatan dan dapat dipergunakan sebagai lampiran pendukung 
-Sasaran Kinerja Pegawai (SKP), kenaikan pangkat, atau administrasi SDM.
-================================================================================`;
-
-    const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Portofolio_Pelatihan_${currentPegawai.nama.replace(/\s+/g, '_')}_${currentPegawai.nip}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    playNotificationSound();
-    onShowSuccess('✓ PDF berhasil dibuat.', 'Dokumen portofolio pelatihan pegawai telah berhasil diunduh ke perangkat Anda.');
   };
 
-  // Send PDF Portfolio to Employee Email Handler
+  // Send Portfolio to Employee Email Handler — pengiriman email sungguhan (EmailJS) atau mailto fallback
   const handleSendPortfolioToEmail = () => {
+    const targetEmail = currentPegawai.email;
+
+    if (!targetEmail) {
+      onShowSuccess('Email belum terdaftar', 'Akun Anda belum memiliki alamat email kedinasan yang terdaftar. Hubungi Admin SDM untuk melengkapi data email Anda terlebih dahulu.');
+      return;
+    }
+
     setIsSendingEmail(true);
 
-    setTimeout(async () => {
-      setIsSendingEmail(false);
-      const targetEmail = currentPegawai.email || 'kelembagaan.tvrisumsel@gmail.com';
+    const bodySummary = combinedTrainingList
+      .map((item, idx) => `${idx + 1}. ${item.judulPelatihan} — ${item.penyelenggara} (${item.tanggalPelatihan}) — ${item.jumlahJp || 0} JP — ${item.status.replace(/_/g, ' ')}`)
+      .join('\n');
 
-      await Storage.addAuditLog({
-        userId: currentPegawai.nip,
-        userName: currentPegawai.nama,
-        action: 'SEND_PORTFOLIO_EMAIL',
-        module: 'SERTIFIKAT',
-        description: `Mengirimkan PDF Portofolio Pelatihan ke email terdaftar (${targetEmail}).`,
-        status: 'SUCCESS'
-      });
+    const bodyText = `Yth. ${currentPegawai.nama},\n\nBerikut ringkasan Portofolio Pelatihan Anda pada Sistem Informasi & Administrasi Pelatihan (SIAP) TVRI Sumatera Selatan:\n\nTotal Pelatihan Diikuti: ${totalPelatihan} Program\nTotal Sertifikat Disetujui: ${totalSertifikatDisetujui} Sertifikat\nTotal Jam Pelatihan: ${totalJamPelatihan} JP\n\nRiwayat Pelatihan:\n${bodySummary || '- Belum ada riwayat pelatihan yang terdaftar.'}\n\nUntuk berkas PDF lengkap, silakan gunakan tombol "Download PDF" pada portal SIAP.\n\nSalam,\nSistem SIAP TVRI Sumatera Selatan`;
 
-      playNotificationSound();
+    sendPortfolioEmail({
+      toEmail: targetEmail,
+      toName: currentPegawai.nama,
+      subject: `Portofolio Pelatihan - ${currentPegawai.nama} (${currentPegawai.nip})`,
+      bodyText
+    })
+      .then(async (result) => {
+        await Storage.addAuditLog({
+          userId: currentPegawai.nip,
+          userName: currentPegawai.nama,
+          action: 'SEND_PORTFOLIO_EMAIL',
+          module: 'SERTIFIKAT',
+          description: `Mengirimkan Portofolio Pelatihan ke email terdaftar (${targetEmail}) via ${result.method === 'emailjs' ? 'EmailJS' : 'aplikasi email pengguna'}.`,
+          status: result.success ? 'SUCCESS' : 'FAILED'
+        });
 
-      onShowSuccess(
-        '✓ PDF berhasil dikirim ke email Anda.',
-        `Dokumen portofolio pelatihan resmi telah dikirimkan ke alamat email terdaftar: ${targetEmail}.`
-      );
-    }, 600);
+        if (!result.success) {
+          onShowSuccess('Gagal mengirim email', result.error);
+          return;
+        }
+
+        playNotificationSound();
+        if (result.method === 'emailjs') {
+          onShowSuccess('✓ Email berhasil dikirim.', `Portofolio pelatihan telah dikirimkan langsung ke alamat email terdaftar: ${targetEmail}.`);
+        } else {
+          onShowSuccess('Aplikasi email dibuka.', `Isi email ke ${targetEmail} sudah disiapkan otomatis — tinggal tekan "Kirim" pada aplikasi email Anda.`);
+        }
+      })
+      .finally(() => setIsSendingEmail(false));
   };
 
   const renderStatusBadge = (status: CertificateStatus) => {
@@ -762,6 +749,7 @@ Sasaran Kinerja Pegawai (SKP), kenaikan pangkat, atau administrasi SDM.
                         <th className="p-2.5">No</th>
                         <th className="p-2.5">Judul Pelatihan</th>
                         <th className="p-2.5">Penyelenggara</th>
+                        <th className="p-2.5">JP</th>
                         <th className="p-2.5">No. Sertifikat</th>
                         <th className="p-2.5">Status</th>
                       </tr>
@@ -772,6 +760,7 @@ Sasaran Kinerja Pegawai (SKP), kenaikan pangkat, atau administrasi SDM.
                           <td className="p-2.5 font-bold text-slate-500">{idx + 1}</td>
                           <td className="p-2.5 font-bold text-slate-900">{item.judulPelatihan}</td>
                           <td className="p-2.5 text-slate-600">{item.penyelenggara}</td>
+                          <td className="p-2.5 font-mono text-slate-700 text-center">{item.jumlahJp || '-'}</td>
                           <td className="p-2.5 font-mono text-[11px] text-slate-700">{item.nomorSertifikat || '-'}</td>
                           <td className="p-2.5 font-bold text-emerald-700">
                             {item.status === 'DISETUJUI' ? 'VERIFIED' : item.status}
@@ -787,7 +776,7 @@ Sasaran Kinerja Pegawai (SKP), kenaikan pangkat, atau administrasi SDM.
             {/* Action Buttons: Download PDF & Kirim ke Email Saya */}
             <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
               <span className="text-xs text-slate-500">
-                Email Terdaftar: <strong className="text-blue-900">{currentPegawai.email || 'kelembagaan.tvrisumsel@gmail.com'}</strong>
+                Email Terdaftar: <strong className="text-blue-900">{currentPegawai.email || 'Belum terdaftar — hubungi Admin SDM'}</strong>
               </span>
 
               <div className="flex items-center space-x-2 shrink-0">
@@ -802,10 +791,11 @@ Sasaran Kinerja Pegawai (SKP), kenaikan pangkat, atau administrasi SDM.
 
                 <button
                   onClick={handleDownloadPortfolioPDF}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs transition flex items-center space-x-1.5 shadow-md shadow-blue-500/20"
+                  disabled={isGeneratingPdf}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs transition flex items-center space-x-1.5 shadow-md shadow-blue-500/20 disabled:opacity-50"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download PDF</span>
+                  <span>{isGeneratingPdf ? 'Membuat PDF...' : 'Download PDF'}</span>
                 </button>
               </div>
             </div>
@@ -815,83 +805,101 @@ Sasaran Kinerja Pegawai (SKP), kenaikan pangkat, atau administrasi SDM.
 
       {/* Document Preview Modal */}
       {previewCert && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8 border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 uppercase">
-                  Pratinjau Sertifikat Resmi
-                </span>
-                <h3 className="font-extrabold text-slate-900 text-base mt-1">{previewCert.judulPelatihan}</h3>
-              </div>
-              <button
-                onClick={() => setPreviewCert(null)}
-                className="text-slate-400 hover:text-slate-700 text-xl font-bold p-1"
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Certificate Display Canvas Frame */}
-            <div className="bg-slate-900 rounded-2xl p-6 text-white border border-slate-800 space-y-6 shadow-inner relative overflow-hidden">
-              <div className="absolute top-0 right-0 transform translate-x-12 -translate-y-12 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
-
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white text-xs">
-                    TVRI
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-white">LPP TVRI STASIUN SUMATERA SELATAN</p>
-                    <p className="text-[10px] text-slate-400">Sistem Informasi & Administrasi Pelatihan (SIAP)</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] font-mono text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-800 font-bold block">
-                    {previewCert.nomorSertifikat || 'SERT/2026/TVRI/OFFICIAL'}
-                  </span>
-                  <span className="text-[10px] text-slate-400">Terbit: {previewCert.tanggalSertifikat || '2026'}</span>
-                </div>
-              </div>
-
-              <div className="text-center space-y-3 py-4 bg-slate-950/60 rounded-xl border border-slate-800 p-4">
-                <Sparkles className="w-8 h-8 text-amber-400 mx-auto" />
-                <p className="text-[11px] font-bold uppercase tracking-widest text-amber-300">SERTIFIKAT PELATIHAN</p>
-                <h2 className="text-lg font-black text-white">{previewCert.judulPelatihan}</h2>
-                <p className="text-xs text-slate-300">
-                  Diberikan Kepada: <strong className="text-amber-300 font-black">{previewCert.employeeNama || currentPegawai.nama}</strong>
-                </p>
-                <p className="text-[11px] text-slate-400 font-mono">
-                  NIP: {previewCert.employeeNip || currentPegawai.nip} • {previewCert.employeeUnitKerja || currentPegawai.unitKerja}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm p-4">
+          <div className="min-h-full flex items-start justify-center">
+            <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8 border border-slate-200 max-h-[calc(100vh-4rem)] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Penyelenggara</p>
-                  <p className="font-semibold text-slate-200">{previewCert.penyelenggara}</p>
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 uppercase">
+                    Pratinjau Sertifikat Resmi
+                  </span>
+                  <h3 className="font-extrabold text-slate-900 text-base mt-1">{previewCert.judulPelatihan}</h3>
                 </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Status Verifikasi</p>
-                  <p className="font-bold text-emerald-400 flex items-center space-x-1 justify-end">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Terverifikasi Sistem SIAP</span>
+                <button
+                  onClick={() => setPreviewCert(null)}
+                  className="text-slate-400 hover:text-slate-700 text-xl font-bold p-1"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {previewCert.fileUrl && !previewCert.fileUrl.startsWith('blob:') ? (
+                /* Berkas asli sudah diunggah pegawai — tampilkan file aslinya, bukan mock-up */
+                previewCert.fileType === 'image' ? (
+                  <img
+                    src={previewCert.fileUrl}
+                    alt={previewCert.judulPelatihan}
+                    className="w-full max-h-[65vh] object-contain rounded-xl border border-slate-200 bg-slate-50"
+                  />
+                ) : (
+                  <iframe
+                    src={previewCert.fileUrl}
+                    title={previewCert.judulPelatihan}
+                    className="w-full h-[65vh] rounded-xl border border-slate-200 bg-slate-50"
+                  />
+                )
+              ) : (
+                /* Belum ada berkas asli yang diunggah — tampilkan ringkasan resmi bergaya kop surat (terang, memakai logo asli) */
+                <div className="bg-white rounded-2xl p-6 text-slate-800 border-2 border-slate-200 space-y-5">
+                  <div className="flex items-center justify-between border-b-2 border-double border-slate-900 pb-4">
+                    <div className="flex items-center space-x-3">
+                      <TvriSumselLogo className="h-10" badge={false} />
+                      <div>
+                        <p className="text-xs font-black text-slate-900 uppercase">LPP TVRI Stasiun Sumatera Selatan</p>
+                        <p className="text-[10px] text-slate-500">Sistem Informasi & Administrasi Pelatihan (SIAP)</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold block">
+                        {previewCert.nomorSertifikat || 'Belum ada nomor sertifikat'}
+                      </span>
+                      <span className="text-[10px] text-slate-400">Terbit: {previewCert.tanggalSertifikat || '-'}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-center space-y-2 py-5 bg-slate-50 rounded-xl border border-slate-200">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-blue-800">Ringkasan Riwayat Pelatihan</p>
+                    <h2 className="text-lg font-black text-slate-900 px-4">{previewCert.judulPelatihan}</h2>
+                    <p className="text-xs text-slate-600">
+                      Diberikan Kepada: <strong className="text-slate-900 font-black">{previewCert.employeeNama || currentPegawai.nama}</strong>
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      NIP: {previewCert.employeeNip || currentPegawai.nip} • {previewCert.employeeUnitKerja || currentPegawai.unitKerja}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">Penyelenggara</p>
+                      <p className="font-semibold text-slate-800">{previewCert.penyelenggara}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">Status Verifikasi</p>
+                      <p className={`font-bold flex items-center space-x-1 justify-end ${previewCert.status === 'DISETUJUI' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>{previewCert.status === 'DISETUJUI' ? 'Terverifikasi Sistem SIAP' : previewCert.status.replace(/_/g, ' ')}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 italic text-center pt-1">
+                    Belum ada berkas sertifikat asli yang diunggah. Unggah berkas untuk menampilkan dokumen aslinya di sini.
                   </p>
                 </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <span className="text-xs text-slate-500 font-medium">
+                  Nama File: <strong className="text-slate-800">{previewCert.fileNama || 'Belum ada berkas diunggah'}</strong>
+                </span>
+
+                <button
+                  onClick={() => setPreviewCert(null)}
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-xl text-xs font-semibold"
+                >
+                  Tutup Pratinjau
+                </button>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-              <span className="text-xs text-slate-500 font-medium">
-                Nama File: <strong className="text-slate-800">{previewCert.fileNama || 'Sertifikat_Resmi.pdf'}</strong>
-              </span>
-
-              <button
-                onClick={() => setPreviewCert(null)}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-xl text-xs font-semibold"
-              >
-                Tutup Pratinjau
-              </button>
             </div>
           </div>
         </div>
@@ -899,3 +907,4 @@ Sasaran Kinerja Pegawai (SKP), kenaikan pangkat, atau administrasi SDM.
     </div>
   );
 };
+

@@ -84,8 +84,9 @@ export const RekapPengajuanModal: React.FC<RekapPengajuanModalProps> = ({
   const totalPengajuanBulanIni = rekapData.filter(r => r.diklat1 || r.diklat2).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-200 rounded-2xl max-w-5xl w-full p-4 md:p-6 shadow-2xl space-y-4 my-8 text-slate-800">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm p-4 print:static print:bg-white print:p-0 print:backdrop-blur-none">
+      <div className="min-h-full flex items-start justify-center print:block print:min-h-0">
+        <div className="bg-white border border-slate-200 rounded-2xl max-w-5xl w-full p-4 md:p-6 shadow-2xl space-y-4 my-8 text-slate-800 max-h-[calc(100vh-4rem)] overflow-y-auto print:max-h-none print:overflow-visible print:border-0 print:shadow-none print:rounded-none print:p-0 print:m-0 print:max-w-full">
 
         {/* Controls Bar (Hidden during print) */}
         <div className="print:hidden space-y-3 border-b border-slate-100 pb-4">
@@ -166,10 +167,13 @@ export const RekapPengajuanModal: React.FC<RekapPengajuanModalProps> = ({
               </button>
             </div>
           </div>
+          <p className="text-[10px] text-slate-400 leading-relaxed">
+            Tips: pada jendela cetak browser, buka bagian <strong>"More settings"</strong> lalu nonaktifkan opsi <strong>"Headers and footers"</strong> agar tanggal/URL bawaan browser tidak ikut tercetak, dan pilih ukuran kertas A4 dengan margin "Default"/"Normal".
+          </p>
         </div>
 
         {/* Printable Canvas */}
-        <div id="printable-rekap-canvas" className="bg-white text-slate-900 p-6 sm:p-8 rounded-xl border border-slate-200 shadow-inner">
+        <div id="printable-rekap-canvas" className="bg-white text-slate-900 p-6 sm:p-8 rounded-xl border border-slate-200 shadow-inner print:p-0 print:border-0 print:shadow-none print:rounded-none">
           <div className="text-center mb-4">
             <h2 className="font-black text-sm uppercase tracking-wide">
               Data Pengajuan Pelatihan Mandiri {STATUS_LABEL[statusFilter]}
@@ -228,6 +232,7 @@ export const RekapPengajuanModal: React.FC<RekapPengajuanModalProps> = ({
           <p className="text-[10px] text-slate-400 mt-4">
             Dicetak otomatis melalui Sistem Informasi & Administrasi Pelatihan (SIAP) TVRI Sumatera Selatan pada {today.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}.
           </p>
+        </div>
         </div>
       </div>
     </div>
