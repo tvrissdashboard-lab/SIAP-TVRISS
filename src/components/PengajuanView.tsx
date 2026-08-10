@@ -151,6 +151,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
     tanggalSelesai: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
     lokasi: 'Pusdiklat TVRI Jakarta',
     keterangan: '',
+    jumlahJp: 0,
     lampiranNama: ''
   });
 
@@ -244,6 +245,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       tanggalSelesai: formData.tanggalSelesai,
       lokasi: formData.lokasi,
       keterangan: formData.keterangan,
+      jumlahJp: formData.jumlahJp ? Number(formData.jumlahJp) : undefined,
       status: 'DRAFT',
       lampiranNama: lampiranNamaFinal,
       lampiranUrl: lampiranUrl,
@@ -273,6 +275,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       tanggalSelesai: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
       lokasi: 'Pusdiklat TVRI Jakarta',
       keterangan: '',
+      jumlahJp: 0,
       lampiranNama: ''
     });
     setAttachedFile(null);
@@ -702,6 +705,21 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                   placeholder="Contoh: Pusdiklat LPP TVRI Kebayoran Baru, Jakarta Selatan / Hybrid Online"
                   value={formData.lokasi}
                   onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Jumlah JP (Jam Pelatihan) *
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  required
+                  placeholder="Contoh: 32"
+                  value={formData.jumlahJp}
+                  onChange={(e) => setFormData({ ...formData, jumlahJp: e.target.value === '' ? '' as any : Number(e.target.value) })}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white focus:outline-none"
                 />
               </div>

@@ -1013,42 +1013,32 @@ export const PegawaiView: React.FC<PegawaiViewProps> = ({
                 )}
               </div>
 
-              {/* Modal Footer Controls */}
-              <div className="bg-slate-100 border-t border-slate-200 px-5 py-3.5 flex items-center justify-between shrink-0">
-                <div className="flex items-center space-x-2">
-                  {isAdmin && (
-                    <>
-                      <button
-                        onClick={() => {
-                          const targetP = p;
-                          setSelectedDetailPegawai(null);
-                          handleOpenEdit(targetP);
-                        }}
-                        className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-3 py-1.5 rounded-xl text-xs transition flex items-center space-x-1"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        <span>Edit Data</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          handleResetPasswordClick(p);
-                        }}
-                        className="bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-3 py-1.5 rounded-xl text-xs transition flex items-center space-x-1"
-                      >
-                        <Key className="w-3.5 h-3.5" />
-                        <span>Reset Pass</span>
-                      </button>
-                    </>
-                  )}
+              {/* Modal Footer Controls — hanya tampil untuk Admin (aksi Edit/Reset Password).
+                  Tombol "Tutup Modal" dihapus karena sudah ada tombol X di pojok kanan atas panel. */}
+              {isAdmin && (
+                <div className="bg-slate-100 border-t border-slate-200 px-5 py-3.5 flex items-center space-x-2 shrink-0">
+                  <button
+                    onClick={() => {
+                      const targetP = p;
+                      setSelectedDetailPegawai(null);
+                      handleOpenEdit(targetP);
+                    }}
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-3 py-1.5 rounded-xl text-xs transition flex items-center space-x-1"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>Edit Data</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleResetPasswordClick(p);
+                    }}
+                    className="bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-3 py-1.5 rounded-xl text-xs transition flex items-center space-x-1"
+                  >
+                    <Key className="w-3.5 h-3.5" />
+                    <span>Reset Pass</span>
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => setSelectedDetailPegawai(null)}
-                  className="bg-slate-800 hover:bg-slate-900 text-white font-extrabold px-4 py-2 rounded-xl text-xs transition"
-                >
-                  Tutup Modal
-                </button>
-              </div>
+              )}
             </div>
           </div>
         );

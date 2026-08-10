@@ -296,7 +296,10 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                     <span className="text-[10px] text-slate-400 font-medium">{new Date(sub.createdAt).toLocaleDateString('id-ID')}</span>
                   </div>
                   <h4 className="font-extrabold text-slate-900 line-clamp-1">{sub.judulPelatihan}</h4>
-                  <p className="text-slate-600 text-[11px] truncate font-medium">Pemohon: <span className="font-bold text-slate-900">{sub.employeeNama}</span></p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-slate-600 text-[11px] truncate font-medium">Pemohon: <span className="font-bold text-slate-900">{sub.employeeNama}</span></p>
+                    <span className="text-[10px] font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded shrink-0 ml-1">{sub.jumlahJp ? `${sub.jumlahJp} JP` : 'JP -'}</span>
+                  </div>
                 </div>
               ))
             )}
@@ -369,6 +372,11 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                 <div className="col-span-2 pt-2 border-t border-slate-200">
                   <span className="text-slate-500 block text-[11px] font-medium">Lokasi Pelaksanaan:</span>
                   <span className="font-bold text-slate-800">{selectedSub.lokasi}</span>
+                </div>
+
+                <div className="col-span-2 pt-2 border-t border-slate-200">
+                  <span className="text-slate-500 block text-[11px] font-medium">Jumlah JP (Jam Pelatihan):</span>
+                  <span className="font-extrabold text-slate-900">{selectedSub.jumlahJp ? `${selectedSub.jumlahJp} JP` : 'Belum diisi oleh pemohon'}</span>
                 </div>
 
                 {selectedSub.keterangan && (
