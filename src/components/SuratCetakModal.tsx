@@ -64,10 +64,10 @@ export const SuratCetakModal: React.FC<SuratCetakModalProps> = ({ submission, on
                   STASIUN SUMATERA SELATAN
                 </h1>
                 <p className="font-sans text-[10px] text-slate-600 font-medium">
-                  Jl. Kapten A. Rivai No.22, 24 Ilir, Bukit Kecil, Kota Palembang, Sumatera Selatan 30135
+                  Jln. Balap Sepeda, Kampus POM IX, Kota Palembang, Sumatera Selatan 30137
                 </p>
                 <p className="font-sans text-[10px] text-slate-600 font-medium">
-                  Telepon: (0711) 350022 • Email: sumsel@tvri.go.id • Website: www.tvri.go.id
+                  Telepon: (0711) 354766, 354530 • Fax: (0711) 313382 • Website: www.tvri.go.id
                 </p>
               </div>
             </div>

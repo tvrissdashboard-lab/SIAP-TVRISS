@@ -55,8 +55,8 @@ function drawLetterhead(doc: jsPDF, logoDataUrl: string | null): number {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(...SLATE);
-  doc.text('Jl. Kapten A. Rivai No.22, 24 Ilir, Bukit Kecil, Kota Palembang, Sumatera Selatan 30135', pageWidth / 2, y + 13, { align: 'center' });
-  doc.text('Telepon: (0711) 350022  |  Email: sumsel@tvri.go.id  |  Website: www.tvri.go.id', pageWidth / 2, y + 17, { align: 'center' });
+  doc.text('Jln. Balap Sepeda, Kampus POM IX, Kota Palembang, Sumatera Selatan 30137', pageWidth / 2, y + 13, { align: 'center' });
+  doc.text('Telepon: (0711) 354766, 354530  |  Fax: (0711) 313382  |  Website: www.tvri.go.id', pageWidth / 2, y + 17, { align: 'center' });
 
   doc.setDrawColor(...NAVY);
   doc.setLineWidth(0.7);
