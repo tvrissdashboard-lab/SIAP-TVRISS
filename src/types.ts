@@ -149,8 +149,20 @@ export interface KepalaStasiunAccessRecord {
 }
 
 /**
- * Helper to check if a Pegawai holds the "Kepala Stasiun" position
+ * Helper to check if a Pegawai's JOB TITLE TEXT literally mentions "Kepala Stasiun"
  * (Jabatan Khusus / Special Access by Position)
+ *
+ * NOTE (fixed 2026-08-18): This is ONLY a display/label helper now — e.g. to show a
+ * "Jabatan Struktural Kepsta" hint in the UI. It must NEVER be used to grant actual
+ * Kepsta privilege. Previously checkHasKepalaStasiunPrivilege() OR'd this in as a
+ * fallback, which meant whoever's `jabatan` field contained "Kepala Stasiun"/"Kepala
+ * TVRI"/"Kepsta" always kept full Kepsta approval rights, even after an admin
+ * explicitly revoked their access in the "Manajemen Hak Akses Kepala Stasiun" page.
+ * Revoking never edited the employee's `jabatan` text, so the old holder silently
+ * kept BOTH the visual crown badge AND the ability to approve/reject pengajuan,
+ * while the newly appointed employee also had it — two people with Kepsta authority
+ * at once. Access must now come from exactly one place: the `kepala_stasiun_access`
+ * table (single source of truth), managed via grant/revoke.
  */
 export function isKepalaStasiunPosition(pegawai?: Pegawai | null): boolean {
   if (!pegawai || !pegawai.jabatan) return false;
@@ -159,7 +171,12 @@ export function isKepalaStasiunPosition(pegawai?: Pegawai | null): boolean {
 }
 
 /**
- * Check if an employee ID or current pegawai holds active Kepala Stasiun privilege
+ * Check if an employee ID or current pegawai holds ACTIVE Kepala Stasiun privilege.
+ *
+ * Single source of truth: the `kepala_stasiun_access` table (activeAccessRecord).
+ * A pegawai only has Kepsta privilege while there is a record for them with
+ * status 'AKTIF'. As soon as an admin revokes it, this returns false immediately —
+ * regardless of what that person's job title (`jabatan`) text says.
  */
 export function checkHasKepalaStasiunPrivilege(
   employeeId?: string | null,
@@ -175,9 +192,6 @@ export function checkHasKepalaStasiunPrivilege(
         return true;
       }
     }
-  }
-  if (pegawai && isKepalaStasiunPosition(pegawai)) {
-    return true;
   }
   return false;
 }

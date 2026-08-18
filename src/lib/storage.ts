@@ -453,8 +453,12 @@ export const Storage = {
     }
 
     if (!isMandatory) {
+      // CATATAN KEAMANAN (diperbaiki 2026-08-18): sebelumnya '1234' dan 'admin'
+      // berlaku sebagai "password lama" universal yang lolos verifikasi untuk
+      // akun manapun, artinya siapa saja bisa mengganti password akun orang
+      // lain tanpa tahu password aslinya. Sudah dihapus.
       const oldHash = hashPassword(oldPass.trim());
-      const isOldMatch = user.passwordHash === oldHash || oldPass.trim() === '1234' || oldPass.trim() === 'admin';
+      const isOldMatch = user.passwordHash === oldHash;
       if (!isOldMatch) {
         return { success: false, message: 'Password lama yang Anda masukkan tidak sesuai.' };
       }
@@ -492,7 +496,7 @@ export const Storage = {
 
   async resetUserPasswordByAdmin(
     employeeId: string,
-    adminName: string = 'Admin SDM'
+    adminName: string = 'Admin'
   ): Promise<{ success: boolean; temporaryPassword: string; message: string }> {
     const pegawaiList = await this.getPegawai();
     const emp = pegawaiList.find(p => p.id === employeeId || p.nip === employeeId);
@@ -523,7 +527,7 @@ export const Storage = {
       userName: adminName,
       action: 'RESET_PASSWORD_ADMIN',
       module: 'PEGAWAI',
-      description: `Admin SDM mereset password akun pegawai ${emp.nama} (NIP: ${emp.nip}). Password sementara: ${tempPass}`,
+      description: `Admin mereset password akun pegawai ${emp.nama} (NIP: ${emp.nip}). Password sementara: ${tempPass}`,
       status: 'SUCCESS'
     });
 
@@ -537,7 +541,7 @@ export const Storage = {
   async adminSetPegawaiPassword(
     employeeId: string,
     newPassword: string,
-    adminName: string = 'Admin SDM'
+    adminName: string = 'Admin'
   ): Promise<{ success: boolean; message: string }> {
     if (!newPassword || newPassword.trim().length < 8) {
       return { success: false, message: 'Password baru minimal 8 karakter.' };
@@ -563,7 +567,7 @@ export const Storage = {
       userName: adminName,
       action: 'ADMIN_CHANGE_PASSWORD',
       module: 'MANAJEMEN_PASSWORD',
-      description: `Admin SDM (${adminName}) memperbarui password akun pegawai (ID: ${employeeId})`,
+      description: `Admin (${adminName}) memperbarui password akun pegawai (ID: ${employeeId})`,
       status: 'SUCCESS'
     });
 
@@ -963,7 +967,7 @@ export const Storage = {
   /**
    * Menghapus SELURUH data transaksional & pegawai pada database Supabase.
    * SANGAT DESTRUKTIF — hanya dipanggil dari SettingsView setelah melewati
-   * flag `VITE_ENABLE_FACTORY_RESET=true` dan konfirmasi mengetik "RESET" oleh Admin SDM.
+   * flag `VITE_ENABLE_FACTORY_RESET=true` dan konfirmasi mengetik "RESET" oleh Admin.
    * Akun 'users_account' TIDAK dihapus otomatis agar Admin tidak terkunci dari sistemnya sendiri.
    */
   async factoryReset(): Promise<{ success: boolean; message: string }> {

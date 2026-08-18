@@ -45,7 +45,7 @@ export const KepalaStasiunAccessManagementView: React.FC<KepalaStasiunAccessMana
       return;
     }
 
-    const adminName = currentUser?.username === 'admin' ? 'Admin SDM System' : (currentPegawai?.nama || 'Admin SDM');
+    const adminName = currentUser?.username === 'admin' ? 'Admin System' : (currentPegawai?.nama || 'Admin');
     const res = await Storage.grantKepalaStasiunAccess(selectedEmp, adminName);
 
     if (res.success) {
@@ -63,7 +63,7 @@ export const KepalaStasiunAccessManagementView: React.FC<KepalaStasiunAccessMana
   };
 
   const handleRevokeAccess = async () => {
-    const adminName = currentUser?.username === 'admin' ? 'Admin SDM System' : (currentPegawai?.nama || 'Admin SDM');
+    const adminName = currentUser?.username === 'admin' ? 'Admin System' : (currentPegawai?.nama || 'Admin');
     const res = await Storage.revokeKepalaStasiunAccess(adminName);
 
     if (res.success) {
@@ -84,7 +84,7 @@ export const KepalaStasiunAccessManagementView: React.FC<KepalaStasiunAccessMana
     const selectedEmp = pegawaiList.find(p => p.id === selectedEmployeeId);
     if (!selectedEmp) return;
 
-    const adminName = currentUser?.username === 'admin' ? 'Admin SDM System' : (currentPegawai?.nama || 'Admin SDM');
+    const adminName = currentUser?.username === 'admin' ? 'Admin System' : (currentPegawai?.nama || 'Admin');
 
     // 1. Revoke active
     await Storage.revokeKepalaStasiunAccess(adminName);
@@ -125,7 +125,7 @@ export const KepalaStasiunAccessManagementView: React.FC<KepalaStasiunAccessMana
 
         <div className="flex items-center space-x-2 bg-blue-50 border border-blue-200 text-blue-900 px-3.5 py-2 rounded-xl text-xs font-bold shrink-0">
           <ShieldCheck className="w-4 h-4 text-blue-600" />
-          <span>Khusus Admin SDM (Otoritas Sistem)</span>
+          <span>Khusus Admin (Otoritas Sistem)</span>
         </div>
       </div>
 

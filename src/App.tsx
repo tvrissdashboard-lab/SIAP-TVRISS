@@ -252,7 +252,7 @@ function MainAppContent() {
 
       await Storage.addAuditLog({
         userId: targetUser.id,
-        userName: targetPegawai?.nama || (targetRole === 'ADMIN_SDM' ? 'Admin SDM' : targetUser.username),
+        userName: targetPegawai?.nama || (targetRole === 'ADMIN_SDM' ? 'Admin' : targetUser.username),
         action: 'SWITCH_ROLE',
         module: 'AUTH',
         description: `Beralih peran penguji menjadi ${targetRole}`,
@@ -266,7 +266,7 @@ function MainAppContent() {
     if (currentUser) {
       await Storage.addAuditLog({
         userId: currentUser.id,
-        userName: currentPegawai?.nama || (currentUser.role === 'ADMIN_SDM' ? 'Admin SDM' : currentUser.username),
+        userName: currentPegawai?.nama || (currentUser.role === 'ADMIN_SDM' ? 'Admin' : currentUser.username),
         action: 'LOGOUT',
         module: 'AUTH',
         description: 'Pengguna keluar dari aplikasi SIAP SUMSEL',
@@ -289,7 +289,7 @@ function MainAppContent() {
 
     await Storage.addAuditLog({
       userId: user.id,
-      userName: pegawai?.nama || (user.role === 'ADMIN_SDM' ? 'Admin SDM' : user.username),
+      userName: pegawai?.nama || (user.role === 'ADMIN_SDM' ? 'Admin' : user.username),
       action: 'LOGIN',
       module: 'AUTH',
       description: 'Pengguna berhasil masuk ke dalam portal SIAP SUMSEL',
@@ -491,7 +491,7 @@ function MainAppContent() {
         activeKepstaRecord={activeKepstaRecord}
         onLogout={handleLogout}
         onSwitchRole={handleSwitchRole}
-        onChangePasswordClick={() => setActiveTab('manajemen_password')}
+        onChangePasswordClick={() => setIsChangePasswordModalOpen(true)}
         onResetData={handleResetDemoData}
       />
 
@@ -640,7 +640,7 @@ function MainAppContent() {
                 <SettingsView 
                   currentUser={currentUser}
                   currentPegawai={currentPegawai}
-                  onChangePasswordClick={() => setActiveTab('manajemen_password')}
+                  onChangePasswordClick={() => setIsChangePasswordModalOpen(true)}
                   onResetData={handleResetDemoData} 
                   onShowSuccess={triggerSuccessNotification}
                 />
@@ -695,7 +695,7 @@ function MainAppContent() {
                     <span className="font-mono text-amber-600 font-extrabold text-xs bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{activeDetailSubmission.nomor}</span>
                     {activeDetailSubmission.status === 'APPROVED' && <span className="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-emerald-300">Disetujui Kepsta</span>}
                     {activeDetailSubmission.status === 'WAITING_APPROVAL' && <span className="bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-amber-300">Menunggu Kepsta</span>}
-                    {activeDetailSubmission.status === 'DRAFT' && <span className="bg-blue-100 text-blue-900 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-blue-300">Draf SDM</span>}
+                    {activeDetailSubmission.status === 'DRAFT' && <span className="bg-blue-100 text-blue-900 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-blue-300">Draf Admin</span>}
                     {activeDetailSubmission.status === 'REJECTED' && <span className="bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-rose-300">Ditolak</span>}
                     {activeDetailSubmission.status === 'CANCELLED' && <span className="bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-slate-300">Dibatalkan</span>}
                   </div>
@@ -771,7 +771,7 @@ function MainAppContent() {
                               'bg-rose-100 text-rose-800'
                             }`}>
                               {h.action === 'APPROVED' && 'DISETUJUI'}
-                              {h.action === 'VERIFIED' && 'DIVERIFIKASI SDM'}
+                              {h.action === 'VERIFIED' && 'DIVERIFIKASI ADMIN'}
                               {h.action === 'CANCELLED' && 'DIBATALKAN'}
                               {h.action === 'REJECTED' && 'DITOLAK'}
                             </span>

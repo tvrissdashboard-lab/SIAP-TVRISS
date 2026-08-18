@@ -241,7 +241,7 @@ export async function generateCertificateSummaryPDF(cert: SertifikatPelatihan): 
   doc.setFontSize(7.5);
   doc.setTextColor(...SLATE);
   const disclaimer = doc.splitTextToSize(
-    'Dokumen ini merupakan ringkasan arsip sertifikat digital pada portal Sistem Informasi & Administrasi Pelatihan (SIAP) LPP TVRI Stasiun Sumatera Selatan. Untuk berkas sertifikat asli, silakan hubungi Admin SDM apabila belum diunggah ke sistem.',
+    'Dokumen ini merupakan ringkasan arsip sertifikat digital pada portal Sistem Informasi & Administrasi Pelatihan (SIAP) LPP TVRI Stasiun Sumatera Selatan. Untuk berkas sertifikat asli, silakan hubungi Admin apabila belum diunggah ke sistem.',
     pageWidth - marginX * 2
   );
   doc.text(disclaimer, marginX, y);

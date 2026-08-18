@@ -137,14 +137,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <h3 className="text-base font-bold text-white mt-1">
               {currentUser?.role === 'ADMIN_SDM'
-                ? 'Admin SDM (Akun Operasional Systems)'
+                ? 'Admin (Akun Operasional Systems)'
                 : (currentPegawai?.nama || (currentUser?.role === 'KEPALA_STASIUN' ? 'Kepala Stasiun TVRI Sumsel' : 'Pengguna System'))}
             </h3>
             <div className="text-xs text-slate-300 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
               {currentUser?.role === 'ADMIN_SDM' ? (
                 <>
                   <span>Username: <strong className="text-amber-300 font-mono">admin</strong></span>
-                  <span>Peran: <strong className="text-amber-300">Admin SDM / Verifikator</strong></span>
+                  <span>Peran: <strong className="text-amber-300">Admin / Verifikator</strong></span>
                 </>
               ) : currentPegawai ? (
                 <>

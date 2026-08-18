@@ -189,8 +189,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       }
 
       // Verifikasi Hash Password
+      // CATATAN KEAMANAN (diperbaiki 2026-08-18): sebelumnya ada bypass
+      // `|| cleanPass === 'sdmtvrisumsel'` di sini yang membuat string
+      // tersebut berfungsi sebagai password universal untuk SEMUA akun
+      // (bukan cuma admin). Sudah dihapus — verifikasi kini murni
+      // membandingkan hash password akun yang bersangkutan.
       const inputHash = hashPassword(cleanPass);
-      let isPassValid = matchedUser.passwordHash === inputHash || cleanPass === 'sdmtvrisumsel';
+      let isPassValid = matchedUser.passwordHash === inputHash;
 
       if (!isPassValid) {
         await recordFailedAttempt(cleanInput, matchedPegawai, 'Password yang Anda masukkan salah');
@@ -203,7 +208,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
       await Storage.addAuditLog({
         userId: matchedUser.id,
-        userName: matchedPegawai?.nama || (matchedUser.role === 'ADMIN_SDM' ? 'Admin SDM' : matchedUser.username),
+        userName: matchedPegawai?.nama || (matchedUser.role === 'ADMIN_SDM' ? 'Admin' : matchedUser.username),
         action: 'LOGIN_SUCCESS',
         module: 'AUTH',
         description: `Login berhasil ke portal SIAP SUMSEL (Role: ${matchedUser.role})`,

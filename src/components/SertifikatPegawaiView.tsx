@@ -171,11 +171,11 @@ export const SertifikatPegawaiView: React.FC<SertifikatPegawaiViewProps> = ({
     setTimeout(async () => {
       // Tunggu update status selesai tersimpan di database SEBELUM refresh data,
       // supaya box "Menunggu Verifikasi" / "Perlu Revisi" tidak menarik data lama (race condition).
-      await Storage.updateCertificateStatus(cert.id, 'DISETUJUI', currentUser?.username || 'Admin SDM');
+      await Storage.updateCertificateStatus(cert.id, 'DISETUJUI', currentUser?.username || 'Admin');
 
       await Storage.addAuditLog({
         userId: currentUser?.username || 'ADMIN_SDM',
-        userName: currentUser?.role === 'KEPALA_STASIUN' ? 'EFLIANTY ANALISA' : 'Admin SDM',
+        userName: currentPegawai?.nama || (currentUser?.role === 'KEPALA_STASIUN' ? 'Kepala Stasiun' : 'Admin'),
         action: 'APPROVE_CERTIFICATE',
         module: 'SERTIFIKAT',
         description: `Menyetujui sertifikat "${cert.judulPelatihan}" milik pegawai ${cert.employeeNama || cert.employeeNip}.`,
@@ -211,13 +211,13 @@ export const SertifikatPegawaiView: React.FC<SertifikatPegawaiViewProps> = ({
       await Storage.updateCertificateStatus(
         rejectionModalCert.id,
         rejectionAction,
-        currentUser?.username || 'Admin SDM',
+        currentUser?.username || 'Admin',
         rejectionReason.trim()
       );
 
       await Storage.addAuditLog({
         userId: currentUser?.username || 'ADMIN_SDM',
-        userName: currentUser?.role === 'KEPALA_STASIUN' ? 'EFLIANTY ANALISA' : 'Admin SDM',
+        userName: currentPegawai?.nama || (currentUser?.role === 'KEPALA_STASIUN' ? 'Kepala Stasiun' : 'Admin'),
         action: rejectionAction === 'DITOLAK' ? 'REJECT_CERTIFICATE' : 'REVISION_CERTIFICATE',
         module: 'SERTIFIKAT',
         description: `Memberikan ${rejectionAction === 'DITOLAK' ? 'penolakan' : 'catatan revisi'} pada sertifikat "${rejectionModalCert.judulPelatihan}" (${rejectionModalCert.employeeNama}): "${rejectionReason.trim()}".`,
@@ -286,7 +286,7 @@ export const SertifikatPegawaiView: React.FC<SertifikatPegawaiViewProps> = ({
           <div className="space-y-1.5">
             <div className="inline-flex items-center space-x-2 bg-amber-400/20 border border-amber-300/40 px-3 py-0.5 rounded-full text-[10px] font-bold text-amber-300 uppercase tracking-widest">
               <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span>Monitoring & Rekapitulasi SDM</span>
+              <span>Monitoring & Rekapitulasi Pegawai</span>
             </div>
             <h2 className="text-2xl font-black text-white tracking-tight">Sertifikat Pegawai TVRI Sumsel</h2>
             <p className="text-xs text-blue-100/80 max-w-2xl leading-relaxed">
@@ -297,7 +297,7 @@ export const SertifikatPegawaiView: React.FC<SertifikatPegawaiViewProps> = ({
           <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl p-3 text-right self-stretch md:self-auto shrink-0">
             <span className="text-[10px] text-blue-200 uppercase font-semibold block">Akses Pengguna</span>
             <span className="text-xs font-black text-amber-300 mt-0.5">
-              {role === 'KEPALA_STASIUN' ? 'KEPALA STASIUN' : 'ADMIN SDM & VERIFIKATOR'}
+              {role === 'KEPALA_STASIUN' ? 'KEPALA STASIUN' : 'ADMIN & VERIFIKATOR'}
             </span>
           </div>
         </div>
@@ -609,7 +609,7 @@ export const SertifikatPegawaiView: React.FC<SertifikatPegawaiViewProps> = ({
                             )}
                           </div>
 
-                          {/* Verification Buttons for Admin SDM only (Kepsta is READ ONLY) */}
+                          {/* Verification Buttons for Admin only (Kepsta is READ ONLY) */}
                           {isAdmin && cert.status === 'SEDANG_DIVERIFIKASI' && (
                             <div className="flex items-center space-x-2">
                               <button

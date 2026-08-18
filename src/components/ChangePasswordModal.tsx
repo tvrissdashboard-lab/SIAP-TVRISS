@@ -114,7 +114,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               <div>
                 <p className="font-extrabold text-amber-900 text-xs">Pemberitahuan Keamanan Sistem</p>
                 <p className="text-[11px] text-amber-800 leading-relaxed mt-0.5">
-                  Password Anda baru saja di-reset oleh Admin SDM atau merupakan login pertama. Untuk alasan keamanan, Anda wajib memperbarui password sementara dengan password baru sebelum dapat menggunakan sistem SIAP.
+                  Password Anda baru saja di-reset oleh Admin atau merupakan login pertama. Untuk alasan keamanan, Anda wajib memperbarui password sementara dengan password baru sebelum dapat menggunakan sistem SIAP.
                 </p>
               </div>
             </div>

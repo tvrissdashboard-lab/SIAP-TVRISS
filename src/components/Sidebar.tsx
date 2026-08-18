@@ -35,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const menuItems = [
     {
       id: 'dashboard' as ActiveTab,
-      label: isAdmin ? 'Dashboard Admin SDM' : (isKepsta ? 'Dashboard Monitoring' : 'Dashboard Pegawai'),
+      label: isAdmin ? 'Dashboard Admin' : (isKepsta ? 'Dashboard Monitoring' : 'Dashboard Pegawai'),
       icon: LayoutDashboard,
       badge: null,
       show: true,

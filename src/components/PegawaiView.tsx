@@ -251,7 +251,7 @@ export const PegawaiView: React.FC<PegawaiViewProps> = ({
         title: editingPegawai ? 'Data Pegawai Diperbarui' : 'Pegawai Baru Ditambahkan',
         message: editingPegawai 
           ? `Profil data pegawai ${formData.nama} (NIP: ${formData.nip}) berhasil diperbarui.`
-          : `Pegawai ${formData.nama} (NIP: ${formData.nip}) berhasil ditambahkan ke database SDM TVRI Sumsel.`,
+          : `Pegawai ${formData.nama} (NIP: ${formData.nip}) berhasil ditambahkan ke database pegawai TVRI Sumsel.`,
         badge: 'DATABASE PEGAWAI',
         type: 'success'
       });
@@ -260,12 +260,12 @@ export const PegawaiView: React.FC<PegawaiViewProps> = ({
 
   const handleResetPasswordClick = async (p: Pegawai) => {
     const defaultPass = generateDefaultPassword(p.tanggalLahir, p.nip);
-    const res = await Storage.resetUserPasswordByAdmin(p.id, currentPegawai?.nama || 'Admin SDM');
+    const res = await Storage.resetUserPasswordByAdmin(p.id, currentPegawai?.nama || 'Admin');
     onResetPassword(p.id);
     if (onShowSuccess) {
       onShowSuccess({
         title: 'Reset Password Berhasil',
-        message: `Password akun ${p.nama} berhasil direset oleh Admin SDM ke password default: "${res.temporaryPassword || defaultPass}". Pegawai dapat langsung menggunakannya untuk login.`,
+        message: `Password akun ${p.nama} berhasil direset oleh Admin ke password default: "${res.temporaryPassword || defaultPass}". Pegawai dapat langsung menggunakannya untuk login.`,
         badge: 'MANAJEMEN PASSWORD',
         type: 'success'
       });
@@ -475,7 +475,7 @@ export const PegawaiView: React.FC<PegawaiViewProps> = ({
               >
                 <option value="ALL">Semua Hak Akses</option>
                 <option value="PEGAWAI">Hak Akses: Pegawai</option>
-                <option value="ADMIN">Hak Akses: Admin SDM</option>
+                <option value="ADMIN">Hak Akses: Admin</option>
                 <option value="KEPSTA">Hak Akses: Kepala Stasiun</option>
               </select>
             </div>
@@ -648,7 +648,7 @@ export const PegawaiView: React.FC<PegawaiViewProps> = ({
                           ) : userAcc?.role === 'ADMIN_SDM' || userAcc?.role === 'SUPER_ADMIN' ? (
                             <span className="inline-flex items-center space-x-1 bg-blue-600 text-white font-extrabold px-2 py-0.5 rounded-md text-[10px] shadow-2xs">
                               <Shield className="w-3 h-3 shrink-0" />
-                              <span>Admin SDM</span>
+                              <span>Admin</span>
                             </span>
                           ) : userAcc?.role === 'KEPALA_STASIUN' ? (
                             <span className="inline-flex items-center space-x-1 bg-amber-500 text-slate-950 font-extrabold px-2 py-0.5 rounded-md text-[10px]">
@@ -964,7 +964,7 @@ export const PegawaiView: React.FC<PegawaiViewProps> = ({
                                 cert.status === 'DITOLAK' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
                                 'bg-amber-100 text-amber-800 border border-amber-300'
                               }`}>
-                                {cert.status === 'DISETUJUI' ? 'DIVERIFIKASI SDM' : cert.status}
+                                {cert.status === 'DISETUJUI' ? 'DIVERIFIKASI ADMIN' : cert.status}
                               </span>
                             </div>
                             <h4 className="font-extrabold text-slate-900 text-xs">{cert.judulPelatihan}</h4>

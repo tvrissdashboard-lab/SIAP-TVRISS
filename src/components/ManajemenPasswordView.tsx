@@ -111,7 +111,7 @@ export const ManajemenPasswordView: React.FC<ManajemenPasswordViewProps> = ({
 
     setIsSubmitting(true);
 
-    const adminName = currentPegawai?.nama || currentUser?.username || 'Admin SDM';
+    const adminName = currentPegawai?.nama || currentUser?.username || 'Admin';
     const result = await Storage.adminSetPegawaiPassword(selectedPegawai.id, cleanNew, adminName);
 
     setIsSubmitting(false);
@@ -127,7 +127,7 @@ export const ManajemenPasswordView: React.FC<ManajemenPasswordViewProps> = ({
     if (onShowSuccess) {
       onShowSuccess({
         title: 'Password Berhasil Diperbarui',
-        message: `Password akun pegawai ${selectedPegawai.nama} (NIP: ${selectedPegawai.nip}) telah berhasil diperbarui oleh Admin SDM.`,
+        message: `Password akun pegawai ${selectedPegawai.nama} (NIP: ${selectedPegawai.nip}) telah berhasil diperbarui oleh Admin.`,
         badge: 'MANAJEMEN PASSWORD',
         type: 'success'
       });
@@ -146,13 +146,13 @@ export const ManajemenPasswordView: React.FC<ManajemenPasswordViewProps> = ({
             <span>Manajemen Password Pegawai</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Pengelolaan terpusat password akun pegawai LPP TVRI Stasiun Sumatera Selatan oleh Admin SDM.
+            Pengelolaan terpusat password akun pegawai LPP TVRI Stasiun Sumatera Selatan oleh Admin.
           </p>
         </div>
 
         <div className="bg-blue-50 border border-blue-200 px-3.5 py-2 rounded-xl text-xs text-blue-900 flex items-center space-x-2 shrink-0">
           <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
-          <span className="font-bold">Akses Khusus Admin SDM</span>
+          <span className="font-bold">Akses Khusus Admin</span>
         </div>
       </div>
 
@@ -300,7 +300,7 @@ export const ManajemenPasswordView: React.FC<ManajemenPasswordViewProps> = ({
                 </div>
                 <div>
                   <h3 className="font-extrabold text-slate-900 text-base">Ganti Password Akun</h3>
-                  <p className="text-xs text-slate-500">Oleh Admin SDM SIAP TVRI Sumsel</p>
+                  <p className="text-xs text-slate-500">Oleh Admin SIAP TVRI Sumsel</p>
                 </div>
               </div>
 

@@ -168,7 +168,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
     // ALWAYS strictly personal data for logged in user
     baseSubmissions = mySubmissions;
   } else if (activeSubTab === 'SEMUA_PENGAJUAN') {
-    // All submissions for Admin SDM and Kepala Stasiun
+    // All submissions for Admin and Kepala Stasiun
     baseSubmissions = (isAdmin || isKepsta) ? submissions : mySubmissions;
   } else if (activeSubTab === 'RIWAYAT_PELATIHAN') {
     // Approved training records
@@ -259,7 +259,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
     if (onShowSuccess) {
       onShowSuccess({
         title: 'Pengajuan Berhasil Dikirim!',
-        message: `Pengajuan ${newSubNumber} atas nama ${selectedEmp?.nama || 'Pegawai'} telah berhasil dibuat dan diteruskan ke Verifikasi SDM.`,
+        message: `Pengajuan ${newSubNumber} atas nama ${selectedEmp?.nama || 'Pegawai'} telah berhasil dibuat dan diteruskan ke Verifikasi Admin.`,
         badge: 'SIAP SUMSEL',
         type: 'success'
       });
@@ -317,7 +317,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
         return (
           <span className="inline-flex items-center space-x-1 bg-blue-100 text-blue-900 border border-blue-300 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm">
             <AlertCircle className="w-3.5 h-3.5 text-blue-600" />
-            <span>Draf / Verifikasi SDM</span>
+            <span>Draf / Verifikasi Admin</span>
           </span>
         );
     }
@@ -452,7 +452,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                 }`}
               >
                 {st === 'ALL' && 'Semua'}
-                {st === 'DRAFT' && 'Draf SDM'}
+                {st === 'DRAFT' && 'Draf Admin'}
                 {st === 'WAITING_APPROVAL' && 'Menunggu Kepsta'}
                 {st === 'APPROVED' && 'Disetujui'}
                 {st === 'REJECTED' && 'Ditolak'}

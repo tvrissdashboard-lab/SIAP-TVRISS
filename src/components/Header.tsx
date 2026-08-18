@@ -100,7 +100,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <div className="flex items-center gap-1">
                       <p className="text-xs font-bold text-white truncate max-w-[140px]">
                         {currentUser?.role === 'ADMIN_SDM'
-                          ? 'Admin SDM'
+                          ? 'Admin'
                           : (currentPegawai?.nama || (currentUser?.role === 'KEPALA_STASIUN' ? 'Kepala Stasiun' : currentUser?.username || 'Pengguna SIAP'))}
                       </p>
                       {isKepsta && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
@@ -109,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
                       {isKepsta
                         ? 'Akses: Kepala Stasiun'
                         : currentUser?.role === 'ADMIN_SDM'
-                        ? 'Verifikator SDM'
+                        ? 'Verifikator'
                         : currentPegawai?.nip
                         ? `NIP: ${currentPegawai.nip}`
                         : `@${currentUser?.username}`}
@@ -124,12 +124,12 @@ export const Header: React.FC<HeaderProps> = ({
                   <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/70 rounded-t-2xl">
                     <p className="font-bold text-slate-900">
                       {currentUser?.role === 'ADMIN_SDM'
-                        ? 'Admin SDM'
+                        ? 'Admin'
                         : (currentPegawai?.nama || (currentUser?.role === 'KEPALA_STASIUN' ? 'Kepala Stasiun TVRI Sumsel' : 'System Account'))}
                     </p>
                     <p className="text-slate-500 text-[11px]">
                       {currentUser?.role === 'ADMIN_SDM'
-                        ? 'Admin SDM / Verifikator'
+                        ? 'Admin / Verifikator'
                         : (currentPegawai?.jabatan || (currentUser?.role === 'KEPALA_STASIUN' ? 'Kepala Stasiun LPP TVRI Sumsel' : 'Pengguna Sistem'))}
                     </p>
                     <div className="mt-1 flex items-center space-x-1 text-slate-600 text-[11px]">

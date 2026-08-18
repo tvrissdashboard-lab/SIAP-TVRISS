@@ -83,14 +83,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     // Validation Check B: Pegawai data status is inactive
     if (matchedPegawai && matchedPegawai.aktif === false) {
       console.warn(`[AUTH FAIL] Pegawai ${matchedPegawai.nama} (${matchedPegawai.nip}) berstatus NON-AKTIF.`);
-      setErrorMsg(`Akun pegawai ${matchedPegawai.nama} (NIP: ${matchedPegawai.nip}) berstatus non-aktif. Silakan hubungi Admin SDM.`);
+      setErrorMsg(`Akun pegawai ${matchedPegawai.nama} (NIP: ${matchedPegawai.nip}) berstatus non-aktif. Silakan hubungi Admin.`);
       return;
     }
 
     // Validation Check C: UserAccount status is inactive
     if (matchedUser && !matchedUser.isActive) {
       console.warn(`[AUTH FAIL] UserAccount ${matchedUser.username} berstatus NON-AKTIF.`);
-      setErrorMsg(`Akun pengguna untuk NIP ${cleanInput} telah dinonaktifkan. Silakan hubungi Admin SDM.`);
+      setErrorMsg(`Akun pengguna untuk NIP ${cleanInput} telah dinonaktifkan. Silakan hubungi Admin.`);
       return;
     }
 

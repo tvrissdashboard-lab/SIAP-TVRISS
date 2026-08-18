@@ -66,9 +66,9 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
       if (onShowSuccess) {
         onShowSuccess({
           title: 'Catatan Diperlukan',
-          message: 'Mohon tuliskan catatan verifikasi berkas SDM sebelum melanjutkan.',
+          message: 'Mohon tuliskan catatan verifikasi berkas Admin sebelum melanjutkan.',
           type: 'info',
-          badge: 'PERINGATAN SDM'
+          badge: 'PERINGATAN ADMIN'
         });
       }
       return;
@@ -79,7 +79,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
       id: `APH${String(Date.now()).slice(-5)}`,
       submissionId: sub.id,
       actorId: currentUser?.id || '',
-      actorNama: currentPegawai?.nama || 'Admin SDM',
+      actorNama: currentPegawai?.nama || 'Admin',
       actorRole: currentUser?.role || 'ADMIN_SDM',
       action: 'VERIFIED',
       note: note,
@@ -90,7 +90,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
     // 2. Audit Log FIRST
     await Storage.addAuditLog({
       userId: currentUser?.id || '',
-      userName: currentPegawai?.nama || 'Admin SDM',
+      userName: currentPegawai?.nama || 'Admin',
       action: 'VERIFY_SUBMISSION',
       module: 'APPROVAL',
       description: `Verifikasi administrasi pengajuan ${sub.nomor} (${sub.employeeNama}): ${note}`,
@@ -103,8 +103,8 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
     if (onShowSuccess) {
       onShowSuccess({
         title: 'Verifikasi Berkas Berhasil',
-        message: `Pengajuan ${sub.nomor} (${sub.employeeNama}) telah diverifikasi oleh SDM dan diteruskan ke Kepala Stasiun.`,
-        badge: 'VERIFIKASI SDM',
+        message: `Pengajuan ${sub.nomor} (${sub.employeeNama}) telah diverifikasi oleh Admin dan diteruskan ke Kepala Stasiun.`,
+        badge: 'VERIFIKASI ADMIN',
         type: 'success'
       });
     }
@@ -215,14 +215,14 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
             <span>Pusat Verifikasi & Approval Pengajuan (SIAP Sumsel)</span>
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Modul pemrosesan alur bertingkat: Verifikasi SDM ➔ Persetujuan Akhir Kepala Stasiun TVRI Sumsel.
+            Modul pemrosesan alur bertingkat: Verifikasi Admin ➔ Persetujuan Akhir Kepala Stasiun TVRI Sumsel.
           </p>
         </div>
 
         <div className="flex items-center space-x-2 text-xs">
           <span className="bg-blue-50 text-blue-900 border border-blue-200 px-3 py-1.5 rounded-xl font-bold flex items-center space-x-1 shadow-sm">
             <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-            <span>Verifikasi SDM: <strong className="text-blue-700 ml-1 font-extrabold">{pendingSdmQueue.length}</strong></span>
+            <span>Verifikasi Admin: <strong className="text-blue-700 ml-1 font-extrabold">{pendingSdmQueue.length}</strong></span>
           </span>
           <span className="bg-amber-50 text-amber-900 border border-amber-200 px-3 py-1.5 rounded-xl font-bold flex items-center space-x-1 shadow-sm">
             <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
@@ -257,7 +257,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
-              <span>Draf SDM</span>
+              <span>Draf Admin</span>
               <span className="bg-blue-100 text-blue-900 px-1.5 py-0.2 rounded font-extrabold text-[10px]">{pendingSdmQueue.length}</span>
             </button>
 
@@ -333,7 +333,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                   <div>
                     {selectedSub.status === 'APPROVED' && <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold border border-emerald-300">Disetujui Kepsta</span>}
                     {selectedSub.status === 'WAITING_APPROVAL' && <span className="bg-amber-100 text-amber-900 px-3 py-1 rounded-full text-xs font-bold border border-amber-300">Menunggu Persetujuan Kepsta</span>}
-                    {selectedSub.status === 'DRAFT' && <span className="bg-blue-100 text-blue-900 px-3 py-1 rounded-full text-xs font-bold border border-blue-300">Draf / Perlu Verifikasi SDM</span>}
+                    {selectedSub.status === 'DRAFT' && <span className="bg-blue-100 text-blue-900 px-3 py-1 rounded-full text-xs font-bold border border-blue-300">Draf / Perlu Verifikasi Admin</span>}
                     {selectedSub.status === 'REJECTED' && <span className="bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-bold border border-rose-300">Ditolak</span>}
                     {selectedSub.status === 'CANCELLED' && <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold border border-slate-300">Dibatalkan</span>}
                   </div>
@@ -454,18 +454,18 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                     className="w-full bg-white border border-amber-200 rounded-xl p-2.5 text-xs text-slate-800 font-medium focus:border-amber-500 focus:outline-none shadow-sm placeholder:text-slate-400 placeholder:italic"
                   />
                   <p className="text-[10px] text-amber-700 -mt-1.5">
-                    * Wajib diisi untuk {isKepsta ? 'Tolak Pengajuan (sebagai alasan penolakan)' : 'Verifikasi SDM'}. Untuk Disetujui Kepala Stasiun, boleh dikosongkan (otomatis terisi catatan standar).
+                    * Wajib diisi untuk {isKepsta ? 'Tolak Pengajuan (sebagai alasan penolakan)' : 'Verifikasi Admin'}. Untuk Disetujui Kepala Stasiun, boleh dikosongkan (otomatis terisi catatan standar).
                   </p>
 
                   <div className="flex items-center justify-end space-x-2 pt-1">
-                    {/* SDM Action */}
+                    {/* Admin Action */}
                     {selectedSub.status === 'DRAFT' && (isAdmin || isKepsta) && (
                       <button
                         onClick={() => handleVerifyBySDM(selectedSub)}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 shadow-md"
                       >
                         <ShieldCheck className="w-4 h-4" />
-                        <span>Verifikasi SDM & Teruskan ke Kepsta</span>
+                        <span>Verifikasi Admin & Teruskan ke Kepsta</span>
                       </button>
                     )}
 
@@ -523,7 +523,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                               : 'bg-rose-100 text-rose-800 border border-rose-300'
                           }`}>
                             {h.action === 'APPROVED' && 'DISETUJUI'}
-                            {h.action === 'VERIFIED' && 'DIVERIFIKASI SDM'}
+                            {h.action === 'VERIFIED' && 'DIVERIFIKASI ADMIN'}
                             {h.action === 'CANCELLED' && 'DIBATALKAN'}
                             {h.action === 'REJECTED' && 'DITOLAK'}
                           </span>

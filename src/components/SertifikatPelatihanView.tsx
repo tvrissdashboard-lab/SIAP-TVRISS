@@ -200,7 +200,7 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
     // Show toast notification
     onShowSuccess(
       '✓ Sertifikat berhasil diunggah.',
-      'Sertifikat Anda telah tersimpan dan sedang menunggu proses verifikasi oleh Admin SDM.'
+      'Sertifikat Anda telah tersimpan dan sedang menunggu proses verifikasi oleh Admin.'
     );
   };
 
@@ -225,7 +225,7 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
     const targetEmail = currentPegawai.email;
 
     if (!targetEmail) {
-      onShowSuccess('Email belum terdaftar', 'Akun Anda belum memiliki alamat email kedinasan yang terdaftar. Hubungi Admin SDM untuk melengkapi data email Anda terlebih dahulu.');
+      onShowSuccess('Email belum terdaftar', 'Akun Anda belum memiliki alamat email kedinasan yang terdaftar. Hubungi Admin untuk melengkapi data email Anda terlebih dahulu.');
       return;
     }
 
@@ -334,7 +334,7 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
         return (
           <span className="inline-flex items-center space-x-1.5 bg-amber-50 text-amber-900 px-3 py-1 rounded-full text-xs font-bold border border-amber-300">
             <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-            <span>Menunggu Verifikasi Admin SDM</span>
+            <span>Menunggu Verifikasi Admin</span>
           </span>
         );
       case 'PERLU_REVISI':
@@ -375,7 +375,7 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
             </div>
             <h2 className="text-2xl font-black text-white tracking-tight">Sertifikat Pelatihan Pegawai</h2>
             <p className="text-xs text-blue-100/80 max-w-xl leading-relaxed">
-              Pusat digitalisasi dan rekam jejak sertifikat pelatihan milik Anda. Unggah sertifikat resmi pelatihan yang telah diikuti untuk verifikasi administrasi SDM TVRI Sumsel.
+              Pusat digitalisasi dan rekam jejak sertifikat pelatihan milik Anda. Unggah sertifikat resmi pelatihan yang telah diikuti untuk verifikasi Admin TVRI Sumsel.
             </p>
           </div>
 
@@ -558,7 +558,7 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
                         <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                         <div className="space-y-0.5">
                           <p className="font-bold text-amber-900">
-                            {item.status === 'DITOLAK' ? 'Sertifikat Ditolak:' : 'Catatan Revisi dari Admin SDM:'}
+                            {item.status === 'DITOLAK' ? 'Sertifikat Ditolak:' : 'Catatan Revisi dari Admin:'}
                           </p>
                           <p className="text-amber-900 leading-relaxed italic">"{item.catatanRevisi}"</p>
                           <p className="text-[11px] font-semibold text-amber-800 pt-1">
@@ -819,7 +819,7 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
             {/* Action Buttons: Download PDF & Kirim ke Email Saya */}
             <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
               <span className="text-xs text-slate-500">
-                Email Terdaftar: <strong className="text-blue-900">{currentPegawai.email || 'Belum terdaftar — hubungi Admin SDM'}</strong>
+                Email Terdaftar: <strong className="text-blue-900">{currentPegawai.email || 'Belum terdaftar — hubungi Admin'}</strong>
               </span>
 
               <div className="flex items-center space-x-2 shrink-0">

@@ -282,7 +282,7 @@ export const INITIAL_USERS: UserAccount[] = [
     lastLogin: '2026-07-24T08:00:00Z',
     createdAt: '2025-01-10T08:00:00Z',
   },
-  // Admin SDM / Verifikator (Akun Operasional Sistem - Standalone System Account)
+  // Admin / Verifikator (Akun Operasional Sistem - Standalone System Account)
   {
     id: 'USR00002',
     employeeId: '',
@@ -394,7 +394,7 @@ export const INITIAL_APPROVAL_HISTORY: ApprovalHistoryItem[] = [
     id: 'APH00001',
     submissionId: 'SUB00001',
     actorId: 'USR00002',
-    actorNama: 'Admin SDM',
+    actorNama: 'Admin',
     actorRole: 'ADMIN_SDM',
     action: 'VERIFIED',
     note: 'Berkas dan kelengkapan administrasi telah diverifikasi lengkap dan memenuhi syarat.',
@@ -414,7 +414,7 @@ export const INITIAL_APPROVAL_HISTORY: ApprovalHistoryItem[] = [
     id: 'APH00003',
     submissionId: 'SUB00002',
     actorId: 'USR00002',
-    actorNama: 'Admin SDM',
+    actorNama: 'Admin',
     actorRole: 'ADMIN_SDM',
     action: 'VERIFIED',
     note: 'Pengajuan relevan dengan penugasan konten TVRI Sumsel. Diteruskan ke Kepala Stasiun.',
@@ -427,7 +427,7 @@ export const INITIAL_AUDIT_LOGS: AuditLogItem[] = [
     id: 'LOG00001',
     datetime: '2026-07-24 08:30:12',
     userId: 'USR00002',
-    userName: 'Admin SDM',
+    userName: 'Admin',
     action: 'LOGIN',
     module: 'AUTH',
     description: 'Pengguna berhasil masuk ke dalam sistem SIAP SUMSEL.',
@@ -447,7 +447,7 @@ export const INITIAL_AUDIT_LOGS: AuditLogItem[] = [
     id: 'LOG00003',
     datetime: '2026-07-23 08:20:05',
     userId: 'USR00002',
-    userName: 'Admin SDM',
+    userName: 'Admin',
     action: 'VERIFY_SUBMISSION',
     module: 'APPROVAL',
     description: 'Memverifikasi berkas pengajuan SUB-20260722-0002 (YENNI SURYANI).',
@@ -498,7 +498,7 @@ export const INITIAL_CERTIFICATES: SertifikatPelatihan[] = [
     status: 'DISETUJUI',
     uploadedAt: '2026-08-17T10:00:00Z',
     verifiedAt: '2026-08-18T14:30:00Z',
-    verifiedBy: 'Admin SDM'
+    verifiedBy: 'Admin'
   },
   {
     id: 'SERT00002',
@@ -578,7 +578,7 @@ export const INITIAL_CERTIFICATES: SertifikatPelatihan[] = [
     status: 'DISETUJUI',
     uploadedAt: '2025-11-20T08:00:00Z',
     verifiedAt: '2025-11-21T09:00:00Z',
-    verifiedBy: 'Admin SDM'
+    verifiedBy: 'Admin'
   },
   {
     id: 'SERT00006',
@@ -601,7 +601,7 @@ export const INITIAL_CERTIFICATES: SertifikatPelatihan[] = [
     status: 'DISETUJUI',
     uploadedAt: '2026-01-12T09:00:00Z',
     verifiedAt: '2026-01-12T14:00:00Z',
-    verifiedBy: 'Admin SDM'
+    verifiedBy: 'Admin'
   }
 ];
 

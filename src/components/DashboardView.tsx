@@ -83,7 +83,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         return (
           <span className="inline-flex items-center space-x-1 bg-slate-100 text-slate-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-slate-300">
             <AlertCircle className="w-3 h-3 text-slate-500" />
-            <span>Verifikasi SDM</span>
+            <span>Verifikasi Admin</span>
           </span>
         );
     }
@@ -115,7 +115,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight leading-snug break-words">
               Halo, <span className="text-amber-300 font-black">{
                 currentUser?.role === 'ADMIN_SDM'
-                  ? 'Admin SDM'
+                  ? 'Admin'
                   : (currentPegawai?.nama || (currentUser?.role === 'KEPALA_STASIUN' ? 'Kepala Stasiun' : currentUser?.username || 'Pegawai'))
               }</span> 👋
             </h2>
@@ -169,7 +169,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 gap-2 min-w-0">
-            <span className="font-medium text-[11px] text-slate-500 truncate flex-1 min-w-0">SDM TVRI Sumsel</span>
+            <span className="font-medium text-[11px] text-slate-500 truncate flex-1 min-w-0">Data Pegawai TVRI Sumsel</span>
             {(isAdmin || isKepsta) ? (
               <button onClick={() => onNavigate('pegawai')} className="text-blue-600 hover:text-blue-800 hover:underline font-bold text-[11px] shrink-0 whitespace-nowrap cursor-pointer">
                 Lihat Data &rarr;
