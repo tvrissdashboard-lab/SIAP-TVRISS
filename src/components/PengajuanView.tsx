@@ -31,7 +31,8 @@ const JENIS_PELATIHAN_OPTIONS = [
   'IT, Network & Cyber Security Broadcasting',
   'Keuangan, BMN & Pengadaan',
   'Manajemen SDM & Keorganisasian',
-  'Hukum, Komunikasi Public & Layanan Informasi'
+  'Hukum, Komunikasi Public & Layanan Informasi',
+  'Lainnya'
 ];
 
 export const PengajuanView: React.FC<PengajuanViewProps> = ({
@@ -84,8 +85,8 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setAttachedFileError('Ukuran file terlalu besar! Maksimal ukuran file adalah 10 MB.');
+    if (file.size > 1 * 1024 * 1024) {
+      setAttachedFileError('Ukuran file terlalu besar! Maksimal ukuran file adalah 1 MB.');
       return;
     }
 
@@ -141,17 +142,21 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
+  // Tanggal hari ini (untuk validasi "tidak boleh mundur" & atribut min pada input tanggal)
+  const getTodayStr = () => new Date().toISOString().split('T')[0];
+
   // Form State
   const [formData, setFormData] = useState({
     employeeId: currentPegawai?.id || (pegawaiList[0]?.id || ''),
     judulPelatihan: '',
     jenisPelatihan: JENIS_PELATIHAN_OPTIONS[0],
+    jenisPelatihanLainnya: '',
     penyelenggara: 'Pusdiklat LPP TVRI / Kominfo',
-    tanggalMulai: new Date().toISOString().split('T')[0],
+    tanggalMulai: getTodayStr(),
     tanggalSelesai: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-    lokasi: 'Pusdiklat TVRI Jakarta',
+    lokasi: '',
     keterangan: '',
-    jumlahJp: 0,
+    jumlahJp: '' as number | '',
     lampiranNama: ''
   });
 
@@ -209,6 +214,42 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       return;
     }
 
+    if (formData.jenisPelatihan === 'Lainnya' && !formData.jenisPelatihanLainnya.trim()) {
+      if (onShowSuccess) {
+        onShowSuccess({
+          title: 'Jenis Rumpun Pelatihan Belum Diisi',
+          message: 'Karena memilih "Lainnya", harap isi nama rumpun pelatihan yang dimaksud.',
+          type: 'info',
+          badge: 'PERINGATAN FORM'
+        });
+      }
+      return;
+    }
+
+    if (!formData.jumlahJp || Number(formData.jumlahJp) <= 0) {
+      if (onShowSuccess) {
+        onShowSuccess({
+          title: 'Jumlah JP Belum Diisi',
+          message: 'Jumlah JP (Jam Pelatihan) wajib diisi dan lebih dari 0.',
+          type: 'info',
+          badge: 'PERINGATAN FORM'
+        });
+      }
+      return;
+    }
+
+    if (formData.tanggalMulai < getTodayStr()) {
+      if (onShowSuccess) {
+        onShowSuccess({
+          title: 'Tanggal Mulai Tidak Valid',
+          message: 'Tanggal mulai pelaksanaan tidak boleh mundur dari hari ini. Silakan pilih tanggal hari ini atau setelahnya.',
+          type: 'info',
+          badge: 'PERINGATAN FORM'
+        });
+      }
+      return;
+    }
+
     const selectedEmp = (isAdmin || isKepsta)
       ? (pegawaiList.find(p => p.id === formData.employeeId) || currentPegawai)
       : currentPegawai;
@@ -239,7 +280,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       employeeGolPangkat: selectedEmp?.golPangkat || '',
       employeeStatusPegawai: selectedEmp?.statusPegawai || 'PNS',
       judulPelatihan: formData.judulPelatihan,
-      jenisPelatihan: formData.jenisPelatihan,
+      jenisPelatihan: formData.jenisPelatihan === 'Lainnya' ? formData.jenisPelatihanLainnya.trim() : formData.jenisPelatihan,
       penyelenggara: formData.penyelenggara,
       tanggalMulai: formData.tanggalMulai,
       tanggalSelesai: formData.tanggalSelesai,
@@ -270,12 +311,13 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       employeeId: currentPegawai?.id || (pegawaiList[0]?.id || ''),
       judulPelatihan: '',
       jenisPelatihan: JENIS_PELATIHAN_OPTIONS[0],
+      jenisPelatihanLainnya: '',
       penyelenggara: 'Pusdiklat LPP TVRI / Kominfo',
-      tanggalMulai: new Date().toISOString().split('T')[0],
+      tanggalMulai: getTodayStr(),
       tanggalSelesai: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-      lokasi: 'Pusdiklat TVRI Jakarta',
+      lokasi: '',
       keterangan: '',
-      jumlahJp: 0,
+      jumlahJp: '' as number | '',
       lampiranNama: ''
     });
     setAttachedFile(null);
@@ -658,6 +700,16 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
+                  {formData.jenisPelatihan === 'Lainnya' && (
+                    <input
+                      type="text"
+                      required
+                      placeholder="Sebutkan jenis rumpun pelatihan yang dimaksud..."
+                      value={formData.jenisPelatihanLainnya}
+                      onChange={(e) => setFormData({ ...formData, jenisPelatihanLainnya: e.target.value })}
+                      className="w-full mt-2 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white focus:outline-none"
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -679,6 +731,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                   <input
                     type="date"
                     required
+                    min={getTodayStr()}
                     value={formData.tanggalMulai}
                     onChange={(e) => setFormData({ ...formData, tanggalMulai: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white focus:outline-none"
@@ -702,7 +755,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Pusdiklat LPP TVRI Kebayoran Baru, Jakarta Selatan / Hybrid Online"
+                  placeholder="Contoh: Pusdiklat LPP TVRI Jakarta / Kantor TVRI Sumsel / Daring (Zoom Meeting) / Online"
                   value={formData.lokasi}
                   onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white focus:outline-none"
@@ -731,7 +784,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                     Dokumen Lampiran / Surat Undangan <span className="text-slate-400 font-normal">(PDF, JPG, PNG)</span>
                   </label>
                   <span className="text-[10px] bg-slate-100 text-slate-600 font-extrabold px-2 py-0.5 rounded border border-slate-200">
-                    Maks. 10 MB
+                    Maks. 1 MB
                   </span>
                 </div>
 

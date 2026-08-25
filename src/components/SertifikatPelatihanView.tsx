@@ -113,9 +113,9 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
         setSelectedFile(null);
         return;
       }
-      // Max size: 5 MB
-      if (file.size > 5 * 1024 * 1024) {
-        setFileError('Ukuran file melebihi 5 MB. Harap pilih file yang lebih kecil.');
+      // Max size: 1 MB
+      if (file.size > 1 * 1024 * 1024) {
+        setFileError('Ukuran file melebihi 1 MB. Harap pilih file yang lebih kecil.');
         setSelectedFile(null);
         return;
       }
@@ -682,7 +682,7 @@ export const SertifikatPelatihanView: React.FC<SertifikatPelatihanViewProps> = (
                       <div>
                         <p className="text-xs font-bold text-slate-800">Tarik file ke sini atau <span className="text-blue-600 underline">Pilih File Sertifikat</span></p>
                         <p className="text-[10px] text-slate-500 mt-0.5">
-                          Format yang diperbolehkan: <strong>PDF, JPG, JPEG, PNG</strong> (Maksimal: <strong>5 MB</strong>)
+                          Format yang diperbolehkan: <strong>PDF, JPG, JPEG, PNG</strong> (Maksimal: <strong>1 MB</strong>)
                         </p>
                       </div>
                     )}
