@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   FileText, Plus, Search, Filter, Calendar, MapPin, Building2, 
   Clock, CheckCircle2, XCircle, AlertCircle, AlertTriangle, Printer, Paperclip, 
@@ -145,6 +145,18 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
   // Tanggal hari ini (untuk validasi "tidak boleh mundur" & atribut min pada input tanggal)
   const getTodayStr = () => new Date().toISOString().split('T')[0];
 
+  // Batasan tanggal mundur: bisa dibuka/tutup admin dari halaman Pengaturan System
+  // (tabel app_settings, key ALLOW_BACKDATE_SUBMISSION). Default: batasan AKTIF.
+  const [allowBackdate, setAllowBackdate] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    Storage.getAppSetting('ALLOW_BACKDATE_SUBMISSION').then((value) => {
+      if (isMounted) setAllowBackdate(value === 'true');
+    });
+    return () => { isMounted = false; };
+  }, []);
+
   // Form State
   const [formData, setFormData] = useState({
     employeeId: currentPegawai?.id || (pegawaiList[0]?.id || ''),
@@ -238,7 +250,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       return;
     }
 
-    if (formData.tanggalMulai < getTodayStr()) {
+    if (!allowBackdate && formData.tanggalMulai < getTodayStr()) {
       if (onShowSuccess) {
         onShowSuccess({
           title: 'Tanggal Mulai Tidak Valid',
@@ -731,11 +743,16 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                   <input
                     type="date"
                     required
-                    min={getTodayStr()}
+                    min={allowBackdate ? undefined : getTodayStr()}
                     value={formData.tanggalMulai}
                     onChange={(e) => setFormData({ ...formData, tanggalMulai: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white focus:outline-none"
                   />
+                  {allowBackdate && (
+                    <p className="text-[10px] text-amber-600 font-bold mt-1">
+                      Mode tanggal mundur sedang AKTIF (khusus keperluan ADM). Nonaktifkan lagi di menu Pengaturan System jika sudah selesai.
+                    </p>
+                  )}
                 </div>
 
                 <div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Database, RefreshCw, Download, ShieldCheck, Building2, Save, User, Key, UserCheck, AlertTriangle } from 'lucide-react';
+import { Settings as SettingsIcon, Database, RefreshCw, Download, ShieldCheck, Building2, Save, User, Key, UserCheck, AlertTriangle, CalendarClock } from 'lucide-react';
 import { UNIT_KERJA_LIST } from '../data/initialData';
 import { UserAccount, Pegawai } from '../types';
 import { Storage } from '../lib/storage';
@@ -31,6 +31,47 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const resetEnabled = isFactoryResetEnabled();
+
+  // Toggle batasan tanggal mundur pada form Pengajuan Pelatihan (untuk keperluan ADM, dsb)
+  const [allowBackdate, setAllowBackdateState] = useState(false);
+  const [isLoadingBackdateSetting, setIsLoadingBackdateSetting] = useState(true);
+  const [isSavingBackdateSetting, setIsSavingBackdateSetting] = useState(false);
+
+  React.useEffect(() => {
+    Storage.getAppSetting('ALLOW_BACKDATE_SUBMISSION').then((value) => {
+      setAllowBackdateState(value === 'true');
+      setIsLoadingBackdateSetting(false);
+    });
+  }, []);
+
+  const handleToggleBackdate = async () => {
+    setIsSavingBackdateSetting(true);
+    const newValue = !allowBackdate;
+    const adminName = currentPegawai?.nama || currentUser?.username || 'Admin';
+    const result = await Storage.setAppSetting('ALLOW_BACKDATE_SUBMISSION', newValue ? 'true' : 'false', adminName);
+    setIsSavingBackdateSetting(false);
+
+    if (result.success) {
+      setAllowBackdateState(newValue);
+      if (onShowSuccess) {
+        onShowSuccess({
+          title: newValue ? 'Batasan Tanggal Mundur Dinonaktifkan' : 'Batasan Tanggal Mundur Diaktifkan Kembali',
+          message: newValue
+            ? 'Pegawai sekarang bisa mengajukan pelatihan dengan tanggal mundur (untuk keperluan ADM). Ingat untuk menonaktifkan lagi setelah selesai.'
+            : 'Pengajuan pelatihan dengan tanggal mundur sudah ditutup kembali. Form kembali ke perilaku normal.',
+          type: 'success',
+          badge: 'PENGATURAN SISTEM'
+        });
+      }
+    } else if (onShowSuccess) {
+      onShowSuccess({
+        title: 'Gagal Menyimpan Pengaturan',
+        message: result.message,
+        type: 'info',
+        badge: 'PERINGATAN'
+      });
+    }
+  };
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -277,6 +318,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 >
                   <Download className="w-4 h-4" />
                   <span>{isExporting ? 'Mengekspor...' : 'Ekspor Data'}</span>
+                </button>
+              </div>
+
+              <div className={`flex items-center justify-between p-3.5 rounded-xl border ${allowBackdate ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
+                <div>
+                  <h4 className={`font-bold text-xs ${allowBackdate ? 'text-amber-900' : 'text-slate-800'}`}>
+                    Batasan Tanggal Mundur Pengajuan {allowBackdate ? '(SEDANG DIBUKA)' : '(Aktif / Normal)'}
+                  </h4>
+                  <p className={`text-[11px] font-medium ${allowBackdate ? 'text-amber-700' : 'text-slate-500'}`}>
+                    {allowBackdate
+                      ? 'Pegawai bisa mengajukan pelatihan dengan tanggal mundur dari hari ini (untuk keperluan ADM). Segera nonaktifkan lagi setelah selesai.'
+                      : 'Normal: pengajuan pelatihan hanya bisa untuk tanggal hari ini atau ke depan. Aktifkan sementara jika perlu mengurus ADM bulan sebelumnya.'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleToggleBackdate}
+                  disabled={isLoadingBackdateSetting || isSavingBackdateSetting}
+                  title={allowBackdate ? 'Tutup kembali batasan tanggal mundur' : 'Buka sementara batasan tanggal mundur'}
+                  className={`font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center space-x-1.5 shrink-0 transition disabled:opacity-50 ${
+                    allowBackdate
+                      ? 'bg-amber-500 hover:bg-amber-600 text-slate-950'
+                      : 'bg-slate-700 hover:bg-slate-800 text-white'
+                  }`}
+                >
+                  <CalendarClock className="w-4 h-4" />
+                  <span>{isSavingBackdateSetting ? 'Menyimpan...' : (allowBackdate ? 'Tutup Batasan' : 'Buka Batasan')}</span>
                 </button>
               </div>
 

@@ -934,6 +934,44 @@ export const Storage = {
   },
 
   // --------------------------------------------------------------------------
+  // 7b. APP SETTINGS (toggle on/off yang bisa diubah dari halaman Pengaturan,
+  //     tanpa perlu edit kode / deploy ulang. Contoh: buka/tutup batasan
+  //     tanggal mundur pada form Pengajuan Pelatihan)
+  // --------------------------------------------------------------------------
+  async getAppSetting(key: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', key)
+      .maybeSingle();
+
+    if (error) {
+      console.error(`[SUPABASE ERROR] Gagal mengambil setting "${key}":`, error);
+      return null;
+    }
+
+    return data?.value ?? null;
+  },
+
+  async setAppSetting(key: string, value: string, adminName: string): Promise<{ success: boolean; message: string }> {
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert({
+        key,
+        value,
+        updated_at: new Date().toISOString(),
+        updated_by: adminName
+      });
+
+    if (error) {
+      console.error(`[SUPABASE ERROR] Gagal menyimpan setting "${key}":`, error);
+      return { success: false, message: `Gagal menyimpan pengaturan: ${error.message}` };
+    }
+
+    return { success: true, message: 'Pengaturan berhasil disimpan.' };
+  },
+
+  // --------------------------------------------------------------------------
   // 8. BACKUP & FACTORY RESET
   // --------------------------------------------------------------------------
   /**
