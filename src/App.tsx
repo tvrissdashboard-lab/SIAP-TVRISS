@@ -423,11 +423,41 @@ function MainAppContent() {
     await loadData();
   };
 
+  // Hapus permanen pengajuan berstatus CANCELLED (khusus Admin, untuk rapikan log administrasi
+  // dari pengajuan yang salah input lalu dibatalkan pegawai). Pengajuan REJECTED/APPROVED
+  // sengaja TIDAK bisa dihapus lewat sini agar tetap jadi jejak audit.
+  const handleDeleteCancelledSubmission = async (id: string) => {
+    const sub = submissions.find(s => s.id === id);
+    const result = await Storage.deleteCancelledSubmission(id);
+
+    if (result.success) {
+      await Storage.addAuditLog({
+        userId: currentUser?.id || '',
+        userName: currentPegawai?.nama || 'Admin',
+        action: 'DELETE_CANCELLED_SUBMISSION',
+        module: 'PENGAJUAN',
+        description: `Menghapus pengajuan yang dibatalkan: ${sub?.nomor || id} (${sub?.employeeNama || '-'})`,
+        status: 'SUCCESS'
+      });
+      await loadData();
+    } else {
+      triggerSuccessNotification({
+        title: 'Gagal Menghapus',
+        message: result.message,
+        type: 'info',
+        badge: 'PERINGATAN'
+      });
+    }
+
+    return result;
+  };
+
   const handleUpdateSubmissionStatus = async (
     submissionId: string, 
-    newStatus: SubmissionStatus
+    newStatus: SubmissionStatus,
+    catatanRevisi?: string
   ) => {
-    await Storage.updateSubmissionStatus(submissionId, newStatus);
+    await Storage.updateSubmissionStatus(submissionId, newStatus, catatanRevisi);
     await loadData();
   };
 
@@ -580,6 +610,7 @@ function MainAppContent() {
                   onCloseCreateModal={() => setAutoOpenCreateSubmission(false)}
                   onSaveSubmission={handleSaveSubmission}
                   onCancelSubmission={handleCancelSubmission}
+                  onDeleteCancelledSubmission={handleDeleteCancelledSubmission}
                   onOpenDetailModal={(sub) => setSelectedDetailSubmission(sub)}
                   onShowSuccess={triggerSuccessNotification}
                 />

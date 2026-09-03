@@ -607,6 +607,7 @@ export const Storage = {
       keterangan: row.keterangan,
       jumlahJp: row.jumlah_jp != null ? Number(row.jumlah_jp) : undefined,
       status: row.status as SubmissionStatus,
+      catatanRevisi: row.catatan_revisi ?? undefined,
       lampiranNama: row.lampiran_nama,
       lampiranUrl: row.lampiran_url,
       createdAt: row.created_at,
@@ -634,6 +635,7 @@ export const Storage = {
       keterangan: submission.keterangan,
       jumlah_jp: submission.jumlahJp ?? null,
       status: submission.status,
+      catatan_revisi: submission.catatanRevisi ?? null,
       lampiran_nama: submission.lampiranNama,
       lampiran_url: submission.lampiranUrl,
       updated_at: new Date().toISOString()
@@ -648,10 +650,18 @@ export const Storage = {
     return submission;
   },
 
-  async updateSubmissionStatus(id: string, newStatus: SubmissionStatus): Promise<boolean> {
+  async updateSubmissionStatus(id: string, newStatus: SubmissionStatus, catatanRevisi?: string): Promise<boolean> {
+    const payload: any = { status: newStatus, updated_at: new Date().toISOString() };
+    // catatan_revisi diisi saat diminta revisi, dan dikosongkan lagi begitu pegawai mengedit ulang (status balik ke DRAFT)
+    if (newStatus === 'PERLU_REVISI') {
+      payload.catatan_revisi = catatanRevisi ?? '';
+    } else if (newStatus === 'DRAFT') {
+      payload.catatan_revisi = null;
+    }
+
     const { error } = await supabase
       .from('pengajuan_pelatihan')
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .update(payload)
       .eq('id', id);
 
     if (error) {
@@ -659,6 +669,34 @@ export const Storage = {
       return false;
     }
     return true;
+  },
+
+  // Hapus permanen pengajuan yang sudah DIBATALKAN pegawai (untuk rapikan log administrasi).
+  // Sengaja HANYA mengizinkan status CANCELLED sebagai jaring pengaman terakhir di level data —
+  // pengajuan REJECTED/APPROVED/lainnya tetap tersimpan sebagai jejak audit.
+  async deleteCancelledSubmission(id: string): Promise<{ success: boolean; message: string }> {
+    const { data: existing, error: fetchError } = await supabase
+      .from('pengajuan_pelatihan')
+      .select('id, status')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fetchError || !existing) {
+      return { success: false, message: 'Data pengajuan tidak ditemukan.' };
+    }
+    if (existing.status !== 'CANCELLED') {
+      return { success: false, message: 'Hanya pengajuan berstatus DIBATALKAN yang boleh dihapus.' };
+    }
+
+    // Bersihkan riwayat approval yang menempel pada pengajuan ini juga, supaya tidak ada data "yatim"
+    await supabase.from('approval_history').delete().eq('submission_id', id);
+
+    const { error } = await supabase.from('pengajuan_pelatihan').delete().eq('id', id);
+    if (error) {
+      console.error('[SUPABASE ERROR] Error deleting cancelled submission:', error);
+      return { success: false, message: `Gagal menghapus: ${error.message}` };
+    }
+    return { success: true, message: 'Pengajuan yang dibatalkan berhasil dihapus.' };
   },
 
   // --------------------------------------------------------------------------

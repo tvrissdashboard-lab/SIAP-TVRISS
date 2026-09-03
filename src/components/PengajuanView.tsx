@@ -20,6 +20,7 @@ interface PengajuanViewProps {
   onCloseCreateModal?: () => void;
   onSaveSubmission: (submission: PengajuanPelatihan) => void;
   onCancelSubmission: (id: string) => void;
+  onDeleteCancelledSubmission?: (id: string) => Promise<{ success: boolean; message: string }>;
   onOpenDetailModal: (sub: PengajuanPelatihan) => void;
   onShowSuccess?: (data: { title: string; message?: string; badge?: string; type?: 'success' | 'approval' | 'info' }) => void;
 }
@@ -45,6 +46,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
   onCloseCreateModal,
   onSaveSubmission,
   onCancelSubmission,
+  onDeleteCancelledSubmission,
   onOpenDetailModal,
   onShowSuccess
 }) => {
@@ -57,6 +59,10 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isRekapModalOpen, setIsRekapModalOpen] = useState(false);
+  // Pengajuan yang sedang diedit (DRAFT / PERLU_REVISI). null = mode buat baru.
+  const [editingSubmission, setEditingSubmission] = useState<PengajuanPelatihan | null>(null);
+  const [submissionToDelete, setSubmissionToDelete] = useState<PengajuanPelatihan | null>(null);
+  const [isDeletingSubmission, setIsDeletingSubmission] = useState(false);
 
   React.useEffect(() => {
     if (autoOpenCreateModal) {
@@ -129,12 +135,34 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
 
   const handleCloseCreateModal = () => {
     setIsCreateModalOpen(false);
+    setEditingSubmission(null);
     setAttachedFile(null);
     setAttachedFileError('');
     setIsDraggingOver(false);
     if (onCloseCreateModal) {
       onCloseCreateModal();
     }
+  };
+
+  // Buka modal dalam mode EDIT, form diisi ulang dari data pengajuan yang sudah ada
+  const handleOpenEditModal = (sub: PengajuanPelatihan) => {
+    setEditingSubmission(sub);
+    setFormData({
+      employeeId: sub.employeeId,
+      judulPelatihan: sub.judulPelatihan,
+      jenisPelatihan: JENIS_PELATIHAN_OPTIONS.includes(sub.jenisPelatihan) ? sub.jenisPelatihan : 'Lainnya',
+      jenisPelatihanLainnya: JENIS_PELATIHAN_OPTIONS.includes(sub.jenisPelatihan) ? '' : sub.jenisPelatihan,
+      penyelenggara: sub.penyelenggara,
+      tanggalMulai: sub.tanggalMulai,
+      tanggalSelesai: sub.tanggalSelesai,
+      lokasi: sub.lokasi,
+      keterangan: sub.keterangan || '',
+      jumlahJp: sub.jumlahJp ?? '',
+      lampiranNama: sub.lampiranNama || ''
+    });
+    setAttachedFile(null);
+    setAttachedFileError('');
+    setIsCreateModalOpen(true);
   };
   const [submissionToCancel, setSubmissionToCancel] = useState<PengajuanPelatihan | null>(null);
 
@@ -266,8 +294,10 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       ? (pegawaiList.find(p => p.id === formData.employeeId) || currentPegawai)
       : currentPegawai;
 
-    let lampiranUrl: string | undefined = undefined;
-    let lampiranNamaFinal = formData.lampiranNama || 'Berkas_Pengajuan_TVRI.pdf';
+    const isEditMode = !!editingSubmission;
+
+    let lampiranUrl: string | undefined = editingSubmission?.lampiranUrl;
+    let lampiranNamaFinal = editingSubmission?.lampiranNama || formData.lampiranNama || 'Berkas_Pengajuan_TVRI.pdf';
 
     if (attachedFile) {
       const uploadResult = await Storage.uploadLampiranFile(attachedFile, selectedEmp?.id || 'UNKNOWN');
@@ -279,10 +309,10 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       lampiranNamaFinal = attachedFile.name;
     }
 
-    const newSubNumber = generateSubmissionNumber(submissions);
+    const newSubNumber = isEditMode ? editingSubmission!.nomor : generateSubmissionNumber(submissions);
 
     const newSubmission: PengajuanPelatihan = {
-      id: `SUB${String(Date.now()).slice(-5)}`,
+      id: isEditMode ? editingSubmission!.id : `SUB${String(Date.now()).slice(-5)}`,
       nomor: newSubNumber,
       employeeId: selectedEmp?.id || '',
       employeeNama: selectedEmp?.nama || 'Pegawai TVRI',
@@ -299,10 +329,13 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       lokasi: formData.lokasi,
       keterangan: formData.keterangan,
       jumlahJp: formData.jumlahJp ? Number(formData.jumlahJp) : undefined,
+      // Edit selalu mengembalikan ke DRAFT (baik dari DRAFT itu sendiri, maupun dari PERLU_REVISI)
+      // supaya otomatis masuk lagi ke antrean verifikasi Admin. catatanRevisi dikosongkan karena sudah diperbaiki.
       status: 'DRAFT',
+      catatanRevisi: undefined,
       lampiranNama: lampiranNamaFinal,
       lampiranUrl: lampiranUrl,
-      createdAt: new Date().toISOString()
+      createdAt: isEditMode ? editingSubmission!.createdAt : new Date().toISOString()
     };
 
     onSaveSubmission(newSubmission);
@@ -310,7 +343,12 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
     handleCloseCreateModal();
 
     if (onShowSuccess) {
-      onShowSuccess({
+      onShowSuccess(isEditMode ? {
+        title: 'Pengajuan Berhasil Diperbarui!',
+        message: `Pengajuan ${newSubNumber} atas nama ${selectedEmp?.nama || 'Pegawai'} telah diperbarui dan dikirim ulang ke Verifikasi Admin.`,
+        badge: 'SIAP SUMSEL',
+        type: 'success'
+      } : {
         title: 'Pengajuan Berhasil Dikirim!',
         message: `Pengajuan ${newSubNumber} atas nama ${selectedEmp?.nama || 'Pegawai'} telah berhasil dibuat dan diteruskan ke Verifikasi Admin.`,
         badge: 'SIAP SUMSEL',
@@ -357,6 +395,13 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
           <span className="inline-flex items-center space-x-1 bg-rose-100 text-rose-800 border border-rose-300 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm">
             <XCircle className="w-3.5 h-3.5 text-rose-600" />
             <span>Ditolak</span>
+          </span>
+        );
+      case 'PERLU_REVISI':
+        return (
+          <span className="inline-flex items-center space-x-1 bg-orange-100 text-orange-900 border border-orange-300 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm">
+            <AlertTriangle className="w-3.5 h-3.5 text-orange-600" />
+            <span>Perlu Revisi</span>
           </span>
         );
       case 'CANCELLED':
@@ -495,7 +540,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
         {(activeSubTab === 'PENGAJUAN_SAYA' || activeSubTab === 'SEMUA_PENGAJUAN') && (
           <div className="flex items-center space-x-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-            {['ALL', 'DRAFT', 'WAITING_APPROVAL', 'APPROVED', 'REJECTED', 'CANCELLED'].map((st) => (
+            {['ALL', 'DRAFT', 'PERLU_REVISI', 'WAITING_APPROVAL', 'APPROVED', 'REJECTED', 'CANCELLED'].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
@@ -507,6 +552,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
               >
                 {st === 'ALL' && 'Semua'}
                 {st === 'DRAFT' && 'Draf Admin'}
+                {st === 'PERLU_REVISI' && 'Perlu Revisi'}
                 {st === 'WAITING_APPROVAL' && 'Menunggu Kepsta'}
                 {st === 'APPROVED' && 'Disetujui'}
                 {st === 'REJECTED' && 'Ditolak'}
@@ -557,6 +603,16 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                     </p>
                   </div>
 
+                  {sub.status === 'PERLU_REVISI' && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-xl p-2.5 flex items-start space-x-2">
+                      <AlertTriangle className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[10px] font-extrabold text-orange-900">Admin meminta perbaikan data:</p>
+                        <p className="text-[10.5px] text-orange-800 font-medium italic">"{sub.catatanRevisi || 'Silakan periksa kembali data pengajuan Anda.'}"</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-2 text-xs text-slate-700">
                     <div className="flex items-start space-x-2">
                       <UserCheck className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
@@ -603,7 +659,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                   </span>
 
                   <div className="flex items-center space-x-2">
-                    {(sub.status === 'DRAFT' || sub.status === 'WAITING_APPROVAL') && (
+                    {(sub.status === 'DRAFT' || sub.status === 'WAITING_APPROVAL' || sub.status === 'PERLU_REVISI') && (
                       <button
                         type="button"
                         onClick={() => setSubmissionToCancel(sub)}
@@ -611,6 +667,26 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                       >
                         <XCircle className="w-3.5 h-3.5 shrink-0" />
                         <span>Batalkan</span>
+                      </button>
+                    )}
+                    {(sub.status === 'DRAFT' || sub.status === 'PERLU_REVISI') && (sub.employeeId === currentPegawai?.id || isAdmin) && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(sub)}
+                        className="text-xs text-blue-700 hover:text-blue-900 hover:underline px-2 py-1 font-bold flex items-center space-x-1 cursor-pointer"
+                      >
+                        <FileText className="w-3.5 h-3.5 shrink-0" />
+                        <span>Edit</span>
+                      </button>
+                    )}
+                    {sub.status === 'CANCELLED' && isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => setSubmissionToDelete(sub)}
+                        className="text-xs text-slate-500 hover:text-rose-700 hover:underline px-2 py-1 font-bold flex items-center space-x-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>Hapus</span>
                       </button>
                     )}
                     <button
@@ -651,10 +727,12 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
               <div>
                 <h3 className="font-extrabold text-slate-900 text-base flex items-center space-x-2">
                   <Plus className="w-5 h-5 text-amber-500" />
-                  <span>Form Pengajuan Pelatihan Baru (TVRI Sumsel)</span>
+                  <span>{editingSubmission ? 'Edit Pengajuan Pelatihan' : 'Form Pengajuan Pelatihan Baru (TVRI Sumsel)'}</span>
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Isi data lengkap rencana kegiatan pelatihan kedinasan pegawai.
+                  {editingSubmission
+                    ? `Memperbaiki pengajuan ${editingSubmission.nomor}. Setelah disimpan, otomatis dikirim ulang ke Verifikasi Admin.`
+                    : 'Isi data lengkap rencana kegiatan pelatihan kedinasan pegawai.'}
                 </p>
               </div>
               <button onClick={handleCloseCreateModal} className="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
@@ -934,7 +1012,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                   className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-5 py-2 rounded-xl shadow-md flex items-center space-x-1.5"
                 >
                   <Send className="w-4 h-4 text-slate-950" />
-                  <span>Kirimkan Draf Pengajuan</span>
+                  <span>{editingSubmission ? 'Simpan & Kirim Ulang ke Verifikasi' : 'Kirimkan Draf Pengajuan'}</span>
                 </button>
               </div>
             </form>
@@ -992,6 +1070,66 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
               >
                 <XCircle className="w-4 h-4" />
                 <span>Ya, Batalkan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {submissionToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-full bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600 mb-4 mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-extrabold text-slate-900 text-center mb-1">
+              Hapus Pengajuan Dibatalkan?
+            </h3>
+            <p className="text-xs text-slate-600 text-center mb-4 leading-relaxed">
+              Data ini akan <span className="font-bold text-rose-600">dihapus permanen</span> dari sistem dan tidak bisa dikembalikan. Hanya dilakukan untuk merapikan log pengajuan yang batal karena salah input.
+            </p>
+
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs mb-5 space-y-1">
+              <div className="flex justify-between font-bold text-slate-900">
+                <span>{submissionToDelete.nomor}</span>
+                <span className="text-blue-700">{submissionToDelete.jenisPelatihan}</span>
+              </div>
+              <p className="font-semibold text-slate-800">{submissionToDelete.judulPelatihan}</p>
+              <p className="text-[11px] text-slate-500">Pemohon: {submissionToDelete.employeeNama}</p>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <button
+                type="button"
+                onClick={() => setSubmissionToDelete(null)}
+                disabled={isDeletingSubmission}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition disabled:opacity-50"
+              >
+                Kembali
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingSubmission}
+                onClick={async () => {
+                  const targetSub = submissionToDelete;
+                  if (!targetSub || !onDeleteCancelledSubmission) return;
+                  setIsDeletingSubmission(true);
+                  const result = await onDeleteCancelledSubmission(targetSub.id);
+                  setIsDeletingSubmission(false);
+                  setSubmissionToDelete(null);
+                  if (result.success && onShowSuccess) {
+                    onShowSuccess({
+                      title: 'Pengajuan Dihapus',
+                      message: `Pengajuan ${targetSub.nomor} (${targetSub.judulPelatihan}) berhasil dihapus permanen.`,
+                      type: 'info',
+                      badge: 'SIAP SUMSEL'
+                    });
+                  }
+                }}
+                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center space-x-1.5 disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{isDeletingSubmission ? 'Menghapus...' : 'Ya, Hapus Permanen'}</span>
               </button>
             </div>
           </div>

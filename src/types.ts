@@ -5,9 +5,10 @@ export type SubmissionStatus =
   | 'WAITING_APPROVAL' 
   | 'APPROVED' 
   | 'REJECTED' 
+  | 'PERLU_REVISI'
   | 'CANCELLED';
 
-export type ApprovalAction = 'VERIFIED' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+export type ApprovalAction = 'VERIFIED' | 'APPROVED' | 'REJECTED' | 'PERLU_REVISI' | 'CANCELLED';
 
 export interface Pegawai {
   id: string;
@@ -57,6 +58,7 @@ export interface PengajuanPelatihan {
   keterangan: string;
   jumlahJp?: number; // Jumlah Jam Pelatihan (JP/JPL) yang diajukan/diikuti pegawai
   status: SubmissionStatus;
+  catatanRevisi?: string; // Catatan dari Admin saat status PERLU_REVISI, ditampilkan ke pegawai
   lampiranUrl?: string;
   lampiranNama?: string;
   createdAt: string;

@@ -634,6 +634,25 @@ export const SertifikatPegawaiView: React.FC<SertifikatPegawaiViewProps> = ({
                               </button>
                             </div>
                           )}
+
+                          {/* Batalkan Persetujuan: khusus Admin, untuk sertifikat yang SUDAH DISETUJUI
+                              tapi ternyata ada kesalahan data/file. Mengembalikan ke PERLU_REVISI supaya
+                              pegawai wajib input ulang. */}
+                          {isAdmin && cert.status === 'DISETUJUI' && (
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => {
+                                  setRejectionModalCert(cert);
+                                  setRejectionAction('PERLU_REVISI');
+                                  setRejectionReason('');
+                                }}
+                                className="bg-orange-100 hover:bg-orange-200 text-orange-900 font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center space-x-1 border border-orange-300"
+                              >
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                <span>Batalkan Persetujuan</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -669,7 +688,7 @@ export const SertifikatPegawaiView: React.FC<SertifikatPegawaiViewProps> = ({
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-extrabold text-slate-900 text-sm flex items-center space-x-2">
                 <MessageSquare className="w-4 h-4 text-amber-600" />
-                <span>Berikan Catatan Verifikasi Sertifikat</span>
+                <span>{rejectionModalCert.status === 'DISETUJUI' ? 'Batalkan Persetujuan Sertifikat' : 'Berikan Catatan Verifikasi Sertifikat'}</span>
               </h3>
               <button
                 onClick={() => setRejectionModalCert(null)}
@@ -678,6 +697,15 @@ export const SertifikatPegawaiView: React.FC<SertifikatPegawaiViewProps> = ({
                 &times;
               </button>
             </div>
+
+            {rejectionModalCert.status === 'DISETUJUI' && (
+              <div className="bg-orange-50 border border-orange-300 rounded-xl p-3 -mt-1 flex items-start space-x-2">
+                <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-orange-900 font-medium leading-relaxed">
+                  Sertifikat ini <strong>sudah disetujui</strong>. Melanjutkan akan membatalkan persetujuan tersebut dan pegawai wajib mengunggah ulang sertifikatnya.
+                </p>
+              </div>
+            )}
 
             <form onSubmit={handleSubmitRejectionModal} className="space-y-4">
               <div>

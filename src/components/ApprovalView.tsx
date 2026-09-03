@@ -13,7 +13,7 @@ interface ApprovalViewProps {
   currentPegawai: Pegawai | null;
   activeKepstaRecord?: KepalaStasiunAccessRecord | null;
   approvalHistory: ApprovalHistoryItem[];
-  onUpdateStatus: (submissionId: string, status: 'WAITING_APPROVAL' | 'APPROVED' | 'REJECTED') => void | Promise<void>;
+  onUpdateStatus: (submissionId: string, status: 'WAITING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'PERLU_REVISI', catatanRevisi?: string) => void | Promise<void>;
   onOpenPrintModal?: (sub: PengajuanPelatihan) => void;
   onShowSuccess?: (data: { title: string; message?: string; badge?: string; type?: 'success' | 'approval' | 'info' }) => void;
 }
@@ -43,7 +43,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
   // Queues
   const pendingSdmQueue = submissions.filter(s => s.status === 'DRAFT');
   const pendingKepstaQueue = submissions.filter(s => s.status === 'WAITING_APPROVAL');
-  const processedQueue = submissions.filter(s => s.status === 'APPROVED' || s.status === 'REJECTED' || s.status === 'CANCELLED');
+  const processedQueue = submissions.filter(s => s.status === 'APPROVED' || s.status === 'REJECTED' || s.status === 'PERLU_REVISI' || s.status === 'CANCELLED');
 
   const activeQueue = activeTab === 'pending_kepsta' 
     ? pendingKepstaQueue 
@@ -106,6 +106,56 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
         message: `Pengajuan ${sub.nomor} (${sub.employeeNama}) telah diverifikasi oleh Admin dan diteruskan ke Kepala Stasiun.`,
         badge: 'VERIFIKASI ADMIN',
         type: 'success'
+      });
+    }
+    setNote('');
+  };
+
+  const handleRequestRevision = async (sub: PengajuanPelatihan) => {
+    if (!note.trim()) {
+      if (onShowSuccess) {
+        onShowSuccess({
+          title: 'Catatan Revisi Wajib Diisi',
+          message: 'Mohon tuliskan bagian mana yang perlu diperbaiki pegawai sebelum meminta revisi.',
+          type: 'info',
+          badge: 'PERINGATAN ADMIN'
+        });
+      }
+      return;
+    }
+
+    // 1. Add History FIRST
+    const historyItem: ApprovalHistoryItem = {
+      id: `APH${String(Date.now()).slice(-5)}`,
+      submissionId: sub.id,
+      actorId: currentUser?.id || '',
+      actorNama: currentPegawai?.nama || 'Admin',
+      actorRole: currentUser?.role || 'ADMIN_SDM',
+      action: 'PERLU_REVISI',
+      note: note,
+      createdAt: new Date().toISOString()
+    };
+    await Storage.addApprovalHistory(historyItem);
+
+    // 2. Audit Log FIRST
+    await Storage.addAuditLog({
+      userId: currentUser?.id || '',
+      userName: currentPegawai?.nama || 'Admin',
+      action: 'REQUEST_REVISION_SUBMISSION',
+      module: 'APPROVAL',
+      description: `Meminta revisi atas pengajuan ${sub.nomor} (${sub.employeeNama}): ${note}`,
+      status: 'SUCCESS'
+    });
+
+    // 3. Update status & refresh state
+    await onUpdateStatus(sub.id, 'PERLU_REVISI', note.trim());
+
+    if (onShowSuccess) {
+      onShowSuccess({
+        title: 'Revisi Diminta ke Pegawai',
+        message: `Pengajuan ${sub.nomor} (${sub.employeeNama}) dikembalikan ke pegawai untuk diperbaiki. Pegawai bisa mengedit dan mengirim ulang tanpa perlu membuat pengajuan baru.`,
+        badge: 'VERIFIKASI ADMIN',
+        type: 'info'
       });
     }
     setNote('');
@@ -334,6 +384,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                     {selectedSub.status === 'APPROVED' && <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold border border-emerald-300">Disetujui Kepsta</span>}
                     {selectedSub.status === 'WAITING_APPROVAL' && <span className="bg-amber-100 text-amber-900 px-3 py-1 rounded-full text-xs font-bold border border-amber-300">Menunggu Persetujuan Kepsta</span>}
                     {selectedSub.status === 'DRAFT' && <span className="bg-blue-100 text-blue-900 px-3 py-1 rounded-full text-xs font-bold border border-blue-300">Draf / Perlu Verifikasi Admin</span>}
+                    {selectedSub.status === 'PERLU_REVISI' && <span className="bg-orange-100 text-orange-900 px-3 py-1 rounded-full text-xs font-bold border border-orange-300">Menunggu Revisi Pegawai</span>}
                     {selectedSub.status === 'REJECTED' && <span className="bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-bold border border-rose-300">Ditolak</span>}
                     {selectedSub.status === 'CANCELLED' && <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold border border-slate-300">Dibatalkan</span>}
                   </div>
@@ -420,6 +471,25 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                 </div>
               )}
 
+              {selectedSub.status === 'PERLU_REVISI' && (
+                <div className="bg-orange-50 border border-orange-300 rounded-xl p-4 flex items-start space-x-3 shadow-sm">
+                  <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-extrabold text-orange-900">
+                      Menunggu Pegawai Melakukan Revisi
+                    </span>
+                    <p className="text-[11px] text-orange-800 font-medium">
+                      Admin telah meminta perbaikan data. Pegawai perlu mengedit pengajuan ini dari menu "Pengajuan Saya"; setelah dikirim ulang, otomatis kembali masuk ke antrean verifikasi Admin.
+                    </p>
+                    {selectedSub.catatanRevisi && (
+                      <p className="text-[11px] text-orange-900 font-bold italic mt-1">
+                        Catatan Admin: "{selectedSub.catatanRevisi}"
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {selectedSub.status === 'CANCELLED' && (
                 <div className="bg-slate-100 border border-slate-300 rounded-xl p-4 flex items-center space-x-3 shadow-sm">
                   <XCircle className="w-5 h-5 text-slate-500 shrink-0" />
@@ -454,19 +524,28 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                     className="w-full bg-white border border-amber-200 rounded-xl p-2.5 text-xs text-slate-800 font-medium focus:border-amber-500 focus:outline-none shadow-sm placeholder:text-slate-400 placeholder:italic"
                   />
                   <p className="text-[10px] text-amber-700 -mt-1.5">
-                    * Wajib diisi untuk {isKepsta ? 'Tolak Pengajuan (sebagai alasan penolakan)' : 'Verifikasi Admin'}. Untuk Disetujui Kepala Stasiun, boleh dikosongkan (otomatis terisi catatan standar).
+                    * Wajib diisi untuk {isKepsta ? 'Tolak Pengajuan (sebagai alasan penolakan)' : 'Verifikasi Admin / Minta Revisi'}. Untuk Disetujui Kepala Stasiun, boleh dikosongkan (otomatis terisi catatan standar).
                   </p>
 
                   <div className="flex items-center justify-end space-x-2 pt-1">
                     {/* Admin Action */}
                     {selectedSub.status === 'DRAFT' && (isAdmin || isKepsta) && (
-                      <button
-                        onClick={() => handleVerifyBySDM(selectedSub)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 shadow-md"
-                      >
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>Verifikasi Admin & Teruskan ke Kepsta</span>
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleRequestRevision(selectedSub)}
+                          className="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-extrabold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5"
+                        >
+                          <AlertCircle className="w-4 h-4" />
+                          <span>Minta Revisi ke Pegawai</span>
+                        </button>
+                        <button
+                          onClick={() => handleVerifyBySDM(selectedSub)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 shadow-md"
+                        >
+                          <ShieldCheck className="w-4 h-4" />
+                          <span>Verifikasi Admin & Teruskan ke Kepsta</span>
+                        </button>
+                      </>
                     )}
 
                     {/* Kepsta Action */}
@@ -520,11 +599,14 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                               ? 'bg-blue-100 text-blue-800 border border-blue-300'
                               : h.action === 'CANCELLED'
                               ? 'bg-slate-200 text-slate-700 border border-slate-300'
+                              : h.action === 'PERLU_REVISI'
+                              ? 'bg-orange-100 text-orange-800 border border-orange-300'
                               : 'bg-rose-100 text-rose-800 border border-rose-300'
                           }`}>
                             {h.action === 'APPROVED' && 'DISETUJUI'}
                             {h.action === 'VERIFIED' && 'DIVERIFIKASI ADMIN'}
                             {h.action === 'CANCELLED' && 'DIBATALKAN'}
+                            {h.action === 'PERLU_REVISI' && 'DIMINTA REVISI'}
                             {h.action === 'REJECTED' && 'DITOLAK'}
                           </span>
                           <p className="text-slate-700 italic text-[11px]">"{h.note}"</p>
