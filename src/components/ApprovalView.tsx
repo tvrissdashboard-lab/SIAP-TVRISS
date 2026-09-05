@@ -601,12 +601,15 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                               ? 'bg-slate-200 text-slate-700 border border-slate-300'
                               : h.action === 'PERLU_REVISI'
                               ? 'bg-orange-100 text-orange-800 border border-orange-300'
+                              : h.action === 'DATA_CORRECTED'
+                              ? 'bg-purple-100 text-purple-800 border border-purple-300'
                               : 'bg-rose-100 text-rose-800 border border-rose-300'
                           }`}>
                             {h.action === 'APPROVED' && 'DISETUJUI'}
                             {h.action === 'VERIFIED' && 'DIVERIFIKASI ADMIN'}
                             {h.action === 'CANCELLED' && 'DIBATALKAN'}
                             {h.action === 'PERLU_REVISI' && 'DIMINTA REVISI'}
+                            {h.action === 'DATA_CORRECTED' && 'DIKOREKSI ADMIN'}
                             {h.action === 'REJECTED' && 'DITOLAK'}
                           </span>
                           <p className="text-slate-700 italic text-[11px]">"{h.note}"</p>

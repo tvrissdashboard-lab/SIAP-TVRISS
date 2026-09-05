@@ -8,7 +8,7 @@ export type SubmissionStatus =
   | 'PERLU_REVISI'
   | 'CANCELLED';
 
-export type ApprovalAction = 'VERIFIED' | 'APPROVED' | 'REJECTED' | 'PERLU_REVISI' | 'CANCELLED';
+export type ApprovalAction = 'VERIFIED' | 'APPROVED' | 'REJECTED' | 'PERLU_REVISI' | 'DATA_CORRECTED' | 'CANCELLED';
 
 export interface Pegawai {
   id: string;

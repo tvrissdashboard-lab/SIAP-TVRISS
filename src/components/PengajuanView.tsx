@@ -18,7 +18,7 @@ interface PengajuanViewProps {
   activeKepstaRecord?: KepalaStasiunAccessRecord | null;
   autoOpenCreateModal?: boolean;
   onCloseCreateModal?: () => void;
-  onSaveSubmission: (submission: PengajuanPelatihan) => void;
+  onSaveSubmission: (submission: PengajuanPelatihan, correctionNote?: string) => void;
   onCancelSubmission: (id: string) => void;
   onDeleteCancelledSubmission?: (id: string) => Promise<{ success: boolean; message: string }>;
   onOpenDetailModal: (sub: PengajuanPelatihan) => void;
@@ -63,6 +63,13 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
   const [editingSubmission, setEditingSubmission] = useState<PengajuanPelatihan | null>(null);
   const [submissionToDelete, setSubmissionToDelete] = useState<PengajuanPelatihan | null>(null);
   const [isDeletingSubmission, setIsDeletingSubmission] = useState(false);
+  // Catatan wajib saat Admin mengoreksi data pengajuan yang statusnya sudah final
+  // (WAITING_APPROVAL / APPROVED / REJECTED / CANCELLED) — bukan bagian dari alur revisi normal.
+  const [editCorrectionNote, setEditCorrectionNote] = useState('');
+  // Admin sedang mengoreksi data pengajuan yang statusnya sudah final (bukan DRAFT/PERLU_REVISI) —
+  // dipakai untuk melonggarkan validasi tanggal mundur karena datanya historis/sudah terjadi.
+  const isEditingFinalizedByAdmin = !!(isAdmin && editingSubmission &&
+    editingSubmission.status !== 'DRAFT' && editingSubmission.status !== 'PERLU_REVISI');
 
   React.useEffect(() => {
     if (autoOpenCreateModal) {
@@ -136,6 +143,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
   const handleCloseCreateModal = () => {
     setIsCreateModalOpen(false);
     setEditingSubmission(null);
+    setEditCorrectionNote('');
     setAttachedFile(null);
     setAttachedFileError('');
     setIsDraggingOver(false);
@@ -147,6 +155,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
   // Buka modal dalam mode EDIT, form diisi ulang dari data pengajuan yang sudah ada
   const handleOpenEditModal = (sub: PengajuanPelatihan) => {
     setEditingSubmission(sub);
+    setEditCorrectionNote('');
     setFormData({
       employeeId: sub.employeeId,
       judulPelatihan: sub.judulPelatihan,
@@ -189,9 +198,9 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
   const [formData, setFormData] = useState({
     employeeId: currentPegawai?.id || (pegawaiList[0]?.id || ''),
     judulPelatihan: '',
-    jenisPelatihan: JENIS_PELATIHAN_OPTIONS[0],
+    jenisPelatihan: '',
     jenisPelatihanLainnya: '',
-    penyelenggara: 'Pusdiklat LPP TVRI / Kominfo',
+    penyelenggara: '',
     tanggalMulai: getTodayStr(),
     tanggalSelesai: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
     lokasi: '',
@@ -278,7 +287,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       return;
     }
 
-    if (!allowBackdate && formData.tanggalMulai < getTodayStr()) {
+    if (!allowBackdate && !isEditingFinalizedByAdmin && formData.tanggalMulai < getTodayStr()) {
       if (onShowSuccess) {
         onShowSuccess({
           title: 'Tanggal Mulai Tidak Valid',
@@ -290,11 +299,38 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       return;
     }
 
+    if (!attachedFile && !editingSubmission?.lampiranUrl) {
+      if (onShowSuccess) {
+        onShowSuccess({
+          title: 'Dokumen Lampiran Wajib Diunggah',
+          message: 'Harap unggah dokumen lampiran / surat undangan sebagai bukti pendukung pengajuan pelatihan.',
+          type: 'info',
+          badge: 'PERINGATAN FORM'
+        });
+      }
+      return;
+    }
+
+    const isEditMode = !!editingSubmission;
+    // Mode "Koreksi Data Admin" (isEditingFinalizedByAdmin, dihitung di atas): admin mengedit
+    // pengajuan yang statusnya sudah final. Status TIDAK direset, wajib disertai catatan alasan.
+    const isAdminCorrection = isEditingFinalizedByAdmin;
+
+    if (isAdminCorrection && !editCorrectionNote.trim()) {
+      if (onShowSuccess) {
+        onShowSuccess({
+          title: 'Catatan Alasan Koreksi Wajib Diisi',
+          message: 'Karena pengajuan ini sudah melewati tahap verifikasi/persetujuan, mohon jelaskan singkat data apa yang diperbaiki (contoh: perbaikan typo nama lembaga penyelenggara).',
+          type: 'info',
+          badge: 'PERINGATAN ADMIN'
+        });
+      }
+      return;
+    }
+
     const selectedEmp = (isAdmin || isKepsta)
       ? (pegawaiList.find(p => p.id === formData.employeeId) || currentPegawai)
       : currentPegawai;
-
-    const isEditMode = !!editingSubmission;
 
     let lampiranUrl: string | undefined = editingSubmission?.lampiranUrl;
     let lampiranNamaFinal = editingSubmission?.lampiranNama || formData.lampiranNama || 'Berkas_Pengajuan_TVRI.pdf';
@@ -329,21 +365,27 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
       lokasi: formData.lokasi,
       keterangan: formData.keterangan,
       jumlahJp: formData.jumlahJp ? Number(formData.jumlahJp) : undefined,
-      // Edit selalu mengembalikan ke DRAFT (baik dari DRAFT itu sendiri, maupun dari PERLU_REVISI)
-      // supaya otomatis masuk lagi ke antrean verifikasi Admin. catatanRevisi dikosongkan karena sudah diperbaiki.
-      status: 'DRAFT',
-      catatanRevisi: undefined,
+      // Edit normal (pemilik/PERLU_REVISI) selalu balik ke DRAFT supaya masuk lagi ke antrean verifikasi.
+      // Koreksi Data Admin (isAdminCorrection) TIDAK mengubah status — cuma memperbaiki data yang salah ketik,
+      // tanpa mengulang proses approval yang sudah selesai.
+      status: isAdminCorrection ? editingSubmission!.status : 'DRAFT',
+      catatanRevisi: isAdminCorrection ? editingSubmission!.catatanRevisi : undefined,
       lampiranNama: lampiranNamaFinal,
       lampiranUrl: lampiranUrl,
       createdAt: isEditMode ? editingSubmission!.createdAt : new Date().toISOString()
     };
 
-    onSaveSubmission(newSubmission);
+    onSaveSubmission(newSubmission, isAdminCorrection ? editCorrectionNote.trim() : undefined);
 
     handleCloseCreateModal();
 
     if (onShowSuccess) {
-      onShowSuccess(isEditMode ? {
+      onShowSuccess(isAdminCorrection ? {
+        title: 'Data Pengajuan Berhasil Dikoreksi',
+        message: `Data pengajuan ${newSubNumber} (${selectedEmp?.nama || 'Pegawai'}) berhasil diperbaiki oleh Admin. Status pengajuan tetap seperti semula, tidak perlu verifikasi ulang.`,
+        badge: 'KOREKSI ADMIN',
+        type: 'success'
+      } : isEditMode ? {
         title: 'Pengajuan Berhasil Diperbarui!',
         message: `Pengajuan ${newSubNumber} atas nama ${selectedEmp?.nama || 'Pegawai'} telah diperbarui dan dikirim ulang ke Verifikasi Admin.`,
         badge: 'SIAP SUMSEL',
@@ -360,9 +402,9 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
     setFormData({
       employeeId: currentPegawai?.id || (pegawaiList[0]?.id || ''),
       judulPelatihan: '',
-      jenisPelatihan: JENIS_PELATIHAN_OPTIONS[0],
+      jenisPelatihan: '',
       jenisPelatihanLainnya: '',
-      penyelenggara: 'Pusdiklat LPP TVRI / Kominfo',
+      penyelenggara: '',
       tanggalMulai: getTodayStr(),
       tanggalSelesai: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
       lokasi: '',
@@ -669,7 +711,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                         <span>Batalkan</span>
                       </button>
                     )}
-                    {(sub.status === 'DRAFT' || sub.status === 'PERLU_REVISI') && (sub.employeeId === currentPegawai?.id || isAdmin) && (
+                    {((sub.status === 'DRAFT' || sub.status === 'PERLU_REVISI') && sub.employeeId === currentPegawai?.id) || isAdmin ? (
                       <button
                         type="button"
                         onClick={() => handleOpenEditModal(sub)}
@@ -678,7 +720,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                         <FileText className="w-3.5 h-3.5 shrink-0" />
                         <span>Edit</span>
                       </button>
-                    )}
+                    ) : null}
                     {sub.status === 'CANCELLED' && isAdmin && (
                       <button
                         type="button"
@@ -727,11 +769,15 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
               <div>
                 <h3 className="font-extrabold text-slate-900 text-base flex items-center space-x-2">
                   <Plus className="w-5 h-5 text-amber-500" />
-                  <span>{editingSubmission ? 'Edit Pengajuan Pelatihan' : 'Form Pengajuan Pelatihan Baru (TVRI Sumsel)'}</span>
+                  <span>
+                    {isEditingFinalizedByAdmin
+                      ? 'Koreksi Data Pengajuan (Admin)'
+                      : editingSubmission ? 'Edit Pengajuan Pelatihan' : 'Form Pengajuan Pelatihan Baru (TVRI Sumsel)'}
+                  </span>
                 </h3>
                 <p className="text-xs text-slate-500">
                   {editingSubmission
-                    ? `Memperbaiki pengajuan ${editingSubmission.nomor}. Setelah disimpan, otomatis dikirim ulang ke Verifikasi Admin.`
+                    ? `Memperbaiki pengajuan ${editingSubmission.nomor}. ${editingSubmission.status === 'DRAFT' || editingSubmission.status === 'PERLU_REVISI' ? 'Setelah disimpan, otomatis dikirim ulang ke Verifikasi Admin.' : 'Status pengajuan tidak akan berubah.'}`
                     : 'Isi data lengkap rencana kegiatan pelatihan kedinasan pegawai.'}
                 </p>
               </div>
@@ -782,10 +828,12 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Jenis Rumpun Pelatihan *</label>
                   <select
+                    required
                     value={formData.jenisPelatihan}
                     onChange={(e) => setFormData({ ...formData, jenisPelatihan: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white focus:outline-none"
                   >
+                    <option value="" disabled>-- Pilih Rumpun Pelatihan --</option>
                     {JENIS_PELATIHAN_OPTIONS.map(opt => (
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
@@ -821,7 +869,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                   <input
                     type="date"
                     required
-                    min={allowBackdate ? undefined : getTodayStr()}
+                    min={(allowBackdate || isEditingFinalizedByAdmin) ? undefined : getTodayStr()}
                     value={formData.tanggalMulai}
                     onChange={(e) => setFormData({ ...formData, tanggalMulai: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white focus:outline-none"
@@ -876,7 +924,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-slate-700 font-bold">
-                    Dokumen Lampiran / Surat Undangan <span className="text-slate-400 font-normal">(PDF, JPG, PNG)</span>
+                    Dokumen Lampiran / Surat Undangan * <span className="text-slate-400 font-normal">(PDF, JPG, PNG)</span>
                   </label>
                   <span className="text-[10px] bg-slate-100 text-slate-600 font-extrabold px-2 py-0.5 rounded border border-slate-200">
                     Maks. 1 MB
@@ -989,15 +1037,38 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-slate-700 font-bold mb-1">Keterangan Tambahan / Rencana Output</label>
+                <label className="block text-slate-700 font-bold mb-1">Keterangan Tambahan / Rencana Output *</label>
                 <textarea
                   rows={3}
+                  required
                   placeholder="Jelaskan alasan urgensi pelatihan dan manfaat peningkatan kinerja operasional TVRI Sumsel..."
                   value={formData.keterangan}
                   onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white focus:outline-none"
                 />
               </div>
+
+              {isEditingFinalizedByAdmin && (
+                <div className="bg-purple-50 border border-purple-300 rounded-xl p-3.5 space-y-2">
+                  <div className="flex items-start space-x-2">
+                    <AlertTriangle className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-purple-900 font-medium leading-relaxed">
+                      Pengajuan ini sudah berstatus <strong>{editingSubmission.status === 'WAITING_APPROVAL' ? 'Menunggu Kepsta' : editingSubmission.status === 'APPROVED' ? 'Disetujui' : editingSubmission.status === 'REJECTED' ? 'Ditolak' : 'Dibatalkan'}</strong>. Perubahan di sini hanya untuk memperbaiki kesalahan ketik/data (misal salah nama lembaga), <strong>status tidak akan berubah / tidak perlu diverifikasi ulang</strong>.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-purple-900 font-bold mb-1 text-xs">Alasan Koreksi Data *</label>
+                    <textarea
+                      rows={2}
+                      required
+                      placeholder="Contoh: Perbaikan typo nama lembaga penyelenggara dari 'Pusdiklat LLP TVRI' menjadi 'Pusdiklat LPP TVRI'."
+                      value={editCorrectionNote}
+                      onChange={(e) => setEditCorrectionNote(e.target.value)}
+                      className="w-full bg-white border border-purple-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:border-purple-600 focus:outline-none text-xs"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end space-x-2">
                 <button
@@ -1012,7 +1083,11 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                   className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-5 py-2 rounded-xl shadow-md flex items-center space-x-1.5"
                 >
                   <Send className="w-4 h-4 text-slate-950" />
-                  <span>{editingSubmission ? 'Simpan & Kirim Ulang ke Verifikasi' : 'Kirimkan Draf Pengajuan'}</span>
+                  <span>
+                    {isEditingFinalizedByAdmin
+                      ? 'Simpan Koreksi Data'
+                      : editingSubmission ? 'Simpan & Kirim Ulang ke Verifikasi' : 'Kirimkan Draf Pengajuan'}
+                  </span>
                 </button>
               </div>
             </form>

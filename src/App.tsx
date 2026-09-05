@@ -382,16 +382,44 @@ function MainAppContent() {
     }
   };
 
-  const handleSaveSubmission = async (submission: PengajuanPelatihan) => {
+  const handleSaveSubmission = async (submission: PengajuanPelatihan, correctionNote?: string) => {
     await Storage.saveSubmission(submission);
-    await Storage.addAuditLog({
-      userId: currentUser?.id || '',
-      userName: currentPegawai?.nama || 'Pegawai',
-      action: 'SAVE_SUBMISSION',
-      module: 'PENGAJUAN',
-      description: `Membuat/memperbarui pengajuan ${submission.nomor}: ${submission.judulPelatihan}`,
-      status: 'SUCCESS'
-    });
+
+    if (correctionNote) {
+      // Ini adalah Koreksi Data Admin pada pengajuan yang statusnya sudah final —
+      // catat sebagai riwayat approval tersendiri (DATA_CORRECTED) supaya jejaknya jelas,
+      // terpisah dari riwayat verifikasi/persetujuan normal.
+      const historyItem: ApprovalHistoryItem = {
+        id: `APH${String(Date.now()).slice(-5)}`,
+        submissionId: submission.id,
+        actorId: currentUser?.id || '',
+        actorNama: currentPegawai?.nama || 'Admin',
+        actorRole: currentUser?.role || 'ADMIN_SDM',
+        action: 'DATA_CORRECTED',
+        note: correctionNote,
+        createdAt: new Date().toISOString()
+      };
+      await Storage.addApprovalHistory(historyItem);
+
+      await Storage.addAuditLog({
+        userId: currentUser?.id || '',
+        userName: currentPegawai?.nama || 'Admin',
+        action: 'ADMIN_CORRECT_SUBMISSION',
+        module: 'PENGAJUAN',
+        description: `Admin mengoreksi data pengajuan ${submission.nomor} (status tetap ${submission.status}): ${correctionNote}`,
+        status: 'SUCCESS'
+      });
+    } else {
+      await Storage.addAuditLog({
+        userId: currentUser?.id || '',
+        userName: currentPegawai?.nama || 'Pegawai',
+        action: 'SAVE_SUBMISSION',
+        module: 'PENGAJUAN',
+        description: `Membuat/memperbarui pengajuan ${submission.nomor}: ${submission.judulPelatihan}`,
+        status: 'SUCCESS'
+      });
+    }
+
     await loadData();
   };
 
@@ -727,6 +755,7 @@ function MainAppContent() {
                     {activeDetailSubmission.status === 'APPROVED' && <span className="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-emerald-300">Disetujui Kepsta</span>}
                     {activeDetailSubmission.status === 'WAITING_APPROVAL' && <span className="bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-amber-300">Menunggu Kepsta</span>}
                     {activeDetailSubmission.status === 'DRAFT' && <span className="bg-blue-100 text-blue-900 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-blue-300">Draf Admin</span>}
+                    {activeDetailSubmission.status === 'PERLU_REVISI' && <span className="bg-orange-100 text-orange-900 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-orange-300">Perlu Revisi</span>}
                     {activeDetailSubmission.status === 'REJECTED' && <span className="bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-rose-300">Ditolak</span>}
                     {activeDetailSubmission.status === 'CANCELLED' && <span className="bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-slate-300">Dibatalkan</span>}
                   </div>
