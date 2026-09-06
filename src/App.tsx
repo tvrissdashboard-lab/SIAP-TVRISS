@@ -384,6 +384,9 @@ function MainAppContent() {
 
   const handleSaveSubmission = async (submission: PengajuanPelatihan, correctionNote?: string) => {
     await Storage.saveSubmission(submission);
+    // Sinkronkan juga ke sertifikat (kalau sudah ada) supaya data yang sama tidak "kembar beda isi"
+    // antara Pengajuan dan Sertifikat setelah diperbaiki.
+    await Storage.syncCertificateFromSubmission(submission);
 
     if (correctionNote) {
       // Ini adalah Koreksi Data Admin pada pengajuan yang statusnya sudah final —

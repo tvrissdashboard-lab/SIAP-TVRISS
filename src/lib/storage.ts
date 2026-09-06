@@ -873,6 +873,33 @@ export const Storage = {
     return cert;
   },
 
+  // Sinkronkan data yang sudah "menempel" (copy) di sertifikat dengan data pengajuan terbaru,
+  // supaya kalau Admin mengoreksi data pengajuan (misal typo nama lembaga) setelah sertifikat
+  // dibuat/diunggah, sertifikat yang sudah ada ikut ter-update — bukan cuma data pengajuannya saja.
+  async syncCertificateFromSubmission(submission: PengajuanPelatihan): Promise<void> {
+    const tanggalPelatihan = `${new Date(submission.tanggalMulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} - ${new Date(submission.tanggalSelesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+    const { error } = await supabase
+      .from('sertifikat_pelatihan')
+      .update({
+        judul_pelatihan: submission.judulPelatihan,
+        jenis_pelatihan: submission.jenisPelatihan,
+        penyelenggara: submission.penyelenggara,
+        tanggal_pelatihan: tanggalPelatihan,
+        jumlah_jp: submission.jumlahJp ?? null,
+        employee_nama: submission.employeeNama,
+        employee_nip: submission.employeeNip,
+        employee_unit_kerja: submission.employeeUnitKerja,
+        employee_jabatan: submission.employeeJabatan
+      })
+      .eq('submission_id', submission.id);
+
+    if (error) {
+      // Tidak fatal: kalau memang belum ada sertifikat untuk pengajuan ini, update ini wajar 0 baris.
+      console.error('[SUPABASE ERROR] Gagal menyinkronkan data sertifikat dari pengajuan:', error);
+    }
+  },
+
   async updateCertificateStatus(
     id: string,
     status: CertificateStatus,
