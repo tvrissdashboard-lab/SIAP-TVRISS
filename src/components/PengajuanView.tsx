@@ -721,7 +721,7 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
                         <span>Edit</span>
                       </button>
                     ) : null}
-                    {sub.status === 'CANCELLED' && isAdmin && (
+                    {(sub.status === 'CANCELLED' || sub.status === 'REJECTED') && isAdmin && (
                       <button
                         type="button"
                         onClick={() => setSubmissionToDelete(sub)}
@@ -1158,10 +1158,10 @@ export const PengajuanView: React.FC<PengajuanViewProps> = ({
               <Trash2 className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-extrabold text-slate-900 text-center mb-1">
-              Hapus Pengajuan Dibatalkan?
+              Hapus Pengajuan {submissionToDelete.status === 'REJECTED' ? 'yang Ditolak' : 'yang Dibatalkan'}?
             </h3>
             <p className="text-xs text-slate-600 text-center mb-4 leading-relaxed">
-              Data ini akan <span className="font-bold text-rose-600">dihapus permanen</span> dari sistem dan tidak bisa dikembalikan. Hanya dilakukan untuk merapikan log pengajuan yang batal karena salah input.
+              Data ini akan <span className="font-bold text-rose-600">dihapus permanen</span> dari sistem dan tidak bisa dikembalikan. Hanya dilakukan untuk merapikan log pengajuan yang {submissionToDelete.status === 'REJECTED' ? 'sudah ditolak' : 'batal karena salah input'}.
             </p>
 
             <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs mb-5 space-y-1">

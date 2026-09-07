@@ -111,14 +111,14 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
     setNote('');
   };
 
-  const handleRequestRevision = async (sub: PengajuanPelatihan) => {
+  const handleRejectByAdmin = async (sub: PengajuanPelatihan) => {
     if (!note.trim()) {
       if (onShowSuccess) {
         onShowSuccess({
-          title: 'Catatan Revisi Wajib Diisi',
-          message: 'Mohon tuliskan bagian mana yang perlu diperbaiki pegawai sebelum meminta revisi.',
+          title: 'Alasan Penolakan Wajib Diisi',
+          message: 'Mohon sertakan catatan alasan penolakan pengajuan untuk pemohon.',
           type: 'info',
-          badge: 'PERINGATAN ADMIN'
+          badge: 'VERIFIKASI ADMIN'
         });
       }
       return;
@@ -131,7 +131,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
       actorId: currentUser?.id || '',
       actorNama: currentPegawai?.nama || 'Admin',
       actorRole: currentUser?.role || 'ADMIN_SDM',
-      action: 'PERLU_REVISI',
+      action: 'REJECTED',
       note: note,
       createdAt: new Date().toISOString()
     };
@@ -141,19 +141,19 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
     await Storage.addAuditLog({
       userId: currentUser?.id || '',
       userName: currentPegawai?.nama || 'Admin',
-      action: 'REQUEST_REVISION_SUBMISSION',
+      action: 'REJECT_SUBMISSION',
       module: 'APPROVAL',
-      description: `Meminta revisi atas pengajuan ${sub.nomor} (${sub.employeeNama}): ${note}`,
+      description: `Admin MENOLAK pengajuan ${sub.nomor} (${sub.employeeNama}) pada tahap verifikasi: ${note}`,
       status: 'SUCCESS'
     });
 
     // 3. Update status & refresh state
-    await onUpdateStatus(sub.id, 'PERLU_REVISI', note.trim());
+    await onUpdateStatus(sub.id, 'REJECTED');
 
     if (onShowSuccess) {
       onShowSuccess({
-        title: 'Revisi Diminta ke Pegawai',
-        message: `Pengajuan ${sub.nomor} (${sub.employeeNama}) dikembalikan ke pegawai untuk diperbaiki. Pegawai bisa mengedit dan mengirim ulang tanpa perlu membuat pengajuan baru.`,
+        title: 'Pengajuan Ditolak',
+        message: `Pengajuan ${sub.nomor} (${sub.employeeNama}) ditolak pada tahap verifikasi Admin dengan catatan resmi.`,
         badge: 'VERIFIKASI ADMIN',
         type: 'info'
       });
@@ -524,7 +524,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                     className="w-full bg-white border border-amber-200 rounded-xl p-2.5 text-xs text-slate-800 font-medium focus:border-amber-500 focus:outline-none shadow-sm placeholder:text-slate-400 placeholder:italic"
                   />
                   <p className="text-[10px] text-amber-700 -mt-1.5">
-                    * Wajib diisi untuk {isKepsta ? 'Tolak Pengajuan (sebagai alasan penolakan)' : 'Verifikasi Admin / Minta Revisi'}. Untuk Disetujui Kepala Stasiun, boleh dikosongkan (otomatis terisi catatan standar).
+                    * Wajib diisi untuk Tolak Pengajuan atau Verifikasi Admin (sebagai catatan resmi). Untuk Disetujui Kepala Stasiun, boleh dikosongkan (otomatis terisi catatan standar).
                   </p>
 
                   <div className="flex items-center justify-end space-x-2 pt-1">
@@ -532,11 +532,11 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                     {selectedSub.status === 'DRAFT' && (isAdmin || isKepsta) && (
                       <>
                         <button
-                          onClick={() => handleRequestRevision(selectedSub)}
-                          className="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-extrabold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5"
+                          onClick={() => handleRejectByAdmin(selectedSub)}
+                          className="bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 font-extrabold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5"
                         >
-                          <AlertCircle className="w-4 h-4" />
-                          <span>Minta Revisi ke Pegawai</span>
+                          <XCircle className="w-4 h-4" />
+                          <span>Tolak</span>
                         </button>
                         <button
                           onClick={() => handleVerifyBySDM(selectedSub)}

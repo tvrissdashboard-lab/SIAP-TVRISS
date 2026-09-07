@@ -671,9 +671,9 @@ export const Storage = {
     return true;
   },
 
-  // Hapus permanen pengajuan yang sudah DIBATALKAN pegawai (untuk rapikan log administrasi).
-  // Sengaja HANYA mengizinkan status CANCELLED sebagai jaring pengaman terakhir di level data —
-  // pengajuan REJECTED/APPROVED/lainnya tetap tersimpan sebagai jejak audit.
+  // Hapus permanen pengajuan berstatus DIBATALKAN atau DITOLAK (untuk rapikan log administrasi).
+  // Sengaja HANYA mengizinkan 2 status ini sebagai jaring pengaman terakhir di level data —
+  // pengajuan APPROVED/WAITING_APPROVAL/DRAFT tidak boleh dihapus lewat sini.
   async deleteCancelledSubmission(id: string): Promise<{ success: boolean; message: string }> {
     const { data: existing, error: fetchError } = await supabase
       .from('pengajuan_pelatihan')
@@ -684,8 +684,8 @@ export const Storage = {
     if (fetchError || !existing) {
       return { success: false, message: 'Data pengajuan tidak ditemukan.' };
     }
-    if (existing.status !== 'CANCELLED') {
-      return { success: false, message: 'Hanya pengajuan berstatus DIBATALKAN yang boleh dihapus.' };
+    if (existing.status !== 'CANCELLED' && existing.status !== 'REJECTED') {
+      return { success: false, message: 'Hanya pengajuan berstatus DIBATALKAN atau DITOLAK yang boleh dihapus.' };
     }
 
     // Bersihkan riwayat approval yang menempel pada pengajuan ini juga, supaya tidak ada data "yatim"
@@ -693,10 +693,10 @@ export const Storage = {
 
     const { error } = await supabase.from('pengajuan_pelatihan').delete().eq('id', id);
     if (error) {
-      console.error('[SUPABASE ERROR] Error deleting cancelled submission:', error);
+      console.error('[SUPABASE ERROR] Error deleting submission:', error);
       return { success: false, message: `Gagal menghapus: ${error.message}` };
     }
-    return { success: true, message: 'Pengajuan yang dibatalkan berhasil dihapus.' };
+    return { success: true, message: 'Pengajuan berhasil dihapus permanen.' };
   },
 
   // --------------------------------------------------------------------------

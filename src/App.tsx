@@ -454,9 +454,8 @@ function MainAppContent() {
     await loadData();
   };
 
-  // Hapus permanen pengajuan berstatus CANCELLED (khusus Admin, untuk rapikan log administrasi
-  // dari pengajuan yang salah input lalu dibatalkan pegawai). Pengajuan REJECTED/APPROVED
-  // sengaja TIDAK bisa dihapus lewat sini agar tetap jadi jejak audit.
+  // Hapus permanen pengajuan berstatus CANCELLED atau REJECTED (khusus Admin, untuk rapikan log
+  // administrasi). Pengajuan DRAFT/WAITING_APPROVAL/APPROVED sengaja TIDAK bisa dihapus lewat sini.
   const handleDeleteCancelledSubmission = async (id: string) => {
     const sub = submissions.find(s => s.id === id);
     const result = await Storage.deleteCancelledSubmission(id);
@@ -465,9 +464,9 @@ function MainAppContent() {
       await Storage.addAuditLog({
         userId: currentUser?.id || '',
         userName: currentPegawai?.nama || 'Admin',
-        action: 'DELETE_CANCELLED_SUBMISSION',
+        action: 'DELETE_SUBMISSION',
         module: 'PENGAJUAN',
-        description: `Menghapus pengajuan yang dibatalkan: ${sub?.nomor || id} (${sub?.employeeNama || '-'})`,
+        description: `Menghapus permanen pengajuan (${sub?.status === 'REJECTED' ? 'ditolak' : 'dibatalkan'}): ${sub?.nomor || id} (${sub?.employeeNama || '-'})`,
         status: 'SUCCESS'
       });
       await loadData();
